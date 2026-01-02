@@ -7,14 +7,27 @@ Track your yearly goals on a 5x5 bingo board. Complete goals, get BINGO!
 - **Bingo Board** - 5x5 grid to track 24 goals + free space
 - **Local Draft Mode** - Create and edit boards without signing in
 - **Real-time Sync** - Sign in to save boards, syncs instantly across all devices
-- **Streak Goals** - Track daily habits like "Run 30 days" or "Sober 90 days"
-  - Choose goal type upfront: one-time or streak
-  - Set target days (30, 60, 90, or custom)
-  - Optional custom start date (for streaks already in progress)
-  - Visual progress ring shows days completed
-  - Reset button if you need to restart
+- **Three Goal Types**
+  - **One-time** - Simple checkbox goals
+  - **Streak** - Track daily habits (30, 60, 90, or custom days)
+    - Visual progress ring shows days completed
+    - Optional custom start date for existing streaks
+    - Reset button if you need to restart
+  - **Progress** - Count-based goals (e.g., "Read 12 books")
+    - Shows progress bar + X/Y counter
+    - Increment/decrement buttons
+    - Auto-completes when target reached
 - **Board Sharing** - Generate public links to share your board
-- **Community Feed** - Opt-in to see others' goal activity
+- **User Profiles**
+  - Auto-generated fun usernames (e.g., "CosmicQuest42")
+  - Custom avatar upload
+  - Edit username anytime
+- **Community Features**
+  - Public feed showing everyone's progress
+  - Auto opt-in on first board (can leave anytime)
+  - Private communities with invite links
+  - Reactions and comments on events
+  - Avatars and usernames shown in feed
 - **AI Features**
   - Import goals from photo (extracts handwritten/typed goals)
   - AI difficulty ranking (Easy/Medium/Hard/Expert)
