@@ -12,7 +12,15 @@ import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Board } from "@/components/bingo/board"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useLocalBoard } from "@/lib/use-local-board"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
@@ -29,6 +37,7 @@ type EventFeedItem = {
     | "streak_milestone"
     | "bingo"
     | "user_joined"
+    | "progress_updated"
   boardId?: string
   boardName: string
   goalText?: string
@@ -333,71 +342,322 @@ function HomePage() {
         </CardContent>
       </Card>
 
-      {/* Gamified Event Feed Section */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center justify-between text-base">
-            <span>Community Activity</span>
-            <Authenticated>
-              <Button
-                variant={eventFeedStatus?.isOptedIn ? "secondary" : "default"}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleToggleOptIn}
-              >
-                {eventFeedStatus?.isOptedIn ? "Leave" : "Join"}
-              </Button>
-            </Authenticated>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-2">
-          <Unauthenticated>
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-3">
-                Sign in to join the community and share your progress!
-              </p>
-              <Button size="sm" onClick={() => setShowSignIn(true)}>
-                Sign in to Join
-              </Button>
-            </div>
-          </Unauthenticated>
-          <Authenticated>
-            {!eventFeedStatus?.isOptedIn ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Join to see community goals and share your progress!
-                </p>
-                <Button size="sm" onClick={handleToggleOptIn}>
-                  Join Community
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {eventFeed && eventFeed.length > 0 ? (
-                  eventFeed
-                    .filter(
-                      (event): event is NonNullable<typeof event> =>
-                        event !== null,
-                    )
-                    .map((event) => (
-                      <EventFeedItemComponent
-                        key={event._id}
-                        event={event as EventFeedItem}
-                      />
-                    ))
-                ) : (
-                  <p className="text-center text-muted-foreground py-3 text-sm">
-                    No activity yet. Create a board to get started!
-                  </p>
-                )}
-              </div>
-            )}
-          </Authenticated>
-        </CardContent>
-      </Card>
+      {/* Community Section with Tabs */}
+      <CommunitySection
+        eventFeedStatus={eventFeedStatus}
+        eventFeed={eventFeed}
+        onToggleOptIn={handleToggleOptIn}
+        onSignIn={() => setShowSignIn(true)}
+      />
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
+  )
+}
+
+type CommunityTab = "public" | "communities"
+
+function CommunitySection({
+  eventFeedStatus,
+  eventFeed,
+  onToggleOptIn,
+  onSignIn,
+}: {
+  eventFeedStatus: { isOptedIn: boolean } | undefined
+  eventFeed: (EventFeedItem | null)[] | undefined
+  onToggleOptIn: () => void
+  onSignIn: () => void
+}) {
+  const [activeTab, setActiveTab] = useState<CommunityTab>("public")
+  const [showCreateCommunity, setShowCreateCommunity] = useState(false)
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center justify-between text-base">
+          <span className="border-b-2 border-dotted border-primary pb-1">
+            Community
+          </span>
+          <Authenticated>
+            {eventFeedStatus?.isOptedIn && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setShowCreateCommunity(true)}
+                >
+                  <svg
+                    className="w-3 h-3 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  New Group
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={onToggleOptIn}
+                >
+                  Leave
+                </Button>
+              </div>
+            )}
+          </Authenticated>
+        </CardTitle>
+
+        {/* Tabs */}
+        <Authenticated>
+          {eventFeedStatus?.isOptedIn && (
+            <div className="flex gap-1 mt-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("public")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  activeTab === "public"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Public Feed
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("communities")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  activeTab === "communities"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                My Groups
+              </button>
+            </div>
+          )}
+        </Authenticated>
+      </CardHeader>
+
+      <CardContent className="pt-2">
+        <Unauthenticated>
+          <div className="text-center py-6">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <svg
+                className="w-6 h-6 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Join the community to share progress and cheer others on!
+            </p>
+            <Button size="sm" onClick={onSignIn}>
+              Sign in to Join
+            </Button>
+          </div>
+        </Unauthenticated>
+
+        <Authenticated>
+          {!eventFeedStatus?.isOptedIn ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <svg
+                  className="w-6 h-6 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Share your goals journey with others!
+              </p>
+              <Button size="sm" onClick={onToggleOptIn}>
+                Join Community
+              </Button>
+            </div>
+          ) : activeTab === "public" ? (
+            <div className="space-y-3">
+              {eventFeed && eventFeed.length > 0 ? (
+                eventFeed
+                  .filter(
+                    (event): event is NonNullable<typeof event> =>
+                      event !== null,
+                  )
+                  .map((event) => (
+                    <EventFeedItemComponent
+                      key={event._id}
+                      event={event as EventFeedItem}
+                    />
+                  ))
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground">
+                    No activity yet. Create a board to get started!
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <CommunitiesList onCreateNew={() => setShowCreateCommunity(true)} />
+          )}
+        </Authenticated>
+      </CardContent>
+
+      {/* Create Community Dialog */}
+      <CreateCommunityDialog
+        open={showCreateCommunity}
+        onOpenChange={setShowCreateCommunity}
+      />
+    </Card>
+  )
+}
+
+function CommunitiesList({ onCreateNew }: { onCreateNew: () => void }) {
+  const communities = useQuery(api.social.getMyCommunities)
+
+  if (!communities || communities.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+          <svg
+            className="w-6 h-6 text-muted-foreground"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
+          </svg>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3">
+          No private groups yet
+        </p>
+        <Button size="sm" variant="outline" onClick={onCreateNew}>
+          Create a Group
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {communities.map((community) => (
+        <Link
+          key={community._id}
+          to="/group/$communityId"
+          params={{ communityId: community._id }}
+          className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
+            {community.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm truncate">{community.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {community.memberCount} members
+            </p>
+          </div>
+          <svg
+            className="w-4 h-4 text-muted-foreground"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+function CreateCommunityDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const createCommunity = useMutation(api.social.createCommunity)
+  const [name, setName] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
+
+  const handleCreate = async () => {
+    if (!name.trim()) return
+    setIsCreating(true)
+    try {
+      await createCommunity({ name: name.trim() })
+      setName("")
+      onOpenChange(false)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create Private Group</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="community-name">Group Name</Label>
+            <Input
+              id="community-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Fitness Friends, Book Club..."
+              autoFocus
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            You'll get an invite link to share with friends. Anyone with the
+            link can join.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreate} disabled={!name.trim() || isCreating}>
+            {isCreating ? "Creating..." : "Create Group"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -483,56 +743,226 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
     await toggleReaction({ eventId: event._id as Id<"eventFeed">, type })
   }
 
+  // Get event type icon
+  const getEventIcon = () => {
+    switch (event.eventType) {
+      case "board_created":
+        return (
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+        )
+      case "goal_completed":
+        return (
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        )
+      case "board_completed":
+        return (
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        )
+      case "streak_started":
+      case "streak_milestone":
+        return (
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 23c-1.1 0-1.99-.89-1.99-1.99h3.98c0 1.1-.89 1.99-1.99 1.99zm7-6v-6c0-3.35-2.36-6.15-5.5-6.83V3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v1.17C7.36 4.85 5 7.65 5 11v6l-2 2v1h18v-1l-2-2z" />
+          </svg>
+        )
+      case "streak_reset":
+        return (
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        )
+      case "bingo":
+        return (
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z" />
+          </svg>
+        )
+      case "user_joined":
+        return (
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+            />
+          </svg>
+        )
+      default:
+        return (
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        )
+    }
+  }
+
+  // Get event type color
+  const getEventColor = () => {
+    switch (event.eventType) {
+      case "board_created":
+        return "bg-blue-500/20 text-blue-500"
+      case "goal_completed":
+        return "bg-green-500/20 text-green-500"
+      case "board_completed":
+        return "bg-yellow-500/20 text-yellow-500"
+      case "streak_started":
+      case "streak_milestone":
+        return "bg-orange-500/20 text-orange-500"
+      case "streak_reset":
+        return "bg-red-500/20 text-red-500"
+      case "bingo":
+        return "bg-purple-500/20 text-purple-500"
+      case "user_joined":
+        return "bg-primary/20 text-primary"
+      default:
+        return "bg-muted text-muted-foreground"
+    }
+  }
+
   return (
-    <div className="p-2 rounded bg-muted/50 space-y-2">
+    <div className="p-3 rounded-lg border border-border bg-card shadow-sm space-y-2">
       {/* Main event row */}
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
-          {event.userName?.charAt(0).toUpperCase() || "?"}
+      <div className="flex items-start gap-3">
+        <div
+          className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${getEventColor()}`}
+        >
+          {getEventIcon()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs">
-            <span className="font-medium">{event.userName || "Someone"}</span>{" "}
-            {getEventMessage()}
+          <p className="text-sm leading-relaxed">
+            <span className="font-semibold">{event.userName || "Someone"}</span>{" "}
+            <span className="text-muted-foreground">{getEventMessage()}</span>
           </p>
+          <span className="text-xs text-muted-foreground">
+            {getTimeAgo(event.createdAt)}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground shrink-0">
-          {getTimeAgo(event.createdAt)}
-        </span>
       </div>
 
       {/* Reactions and comments row */}
-      <div className="flex items-center gap-3 pl-8 text-xs">
+      <div className="flex items-center gap-1 pl-10">
         <button
           type="button"
           onClick={() => handleReaction("up")}
-          className={`flex items-center gap-1 hover:text-green-500 transition-colors ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
             event.userReaction === "up"
-              ? "text-green-500"
-              : "text-muted-foreground"
+              ? "bg-green-500/20 text-green-600"
+              : "text-muted-foreground hover:bg-muted hover:text-green-600"
           }`}
         >
-          <span>👍</span>
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+            />
+          </svg>
           {event.upCount > 0 && <span>{event.upCount}</span>}
         </button>
         <button
           type="button"
           onClick={() => handleReaction("down")}
-          className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
             event.userReaction === "down"
-              ? "text-red-500"
-              : "text-muted-foreground"
+              ? "bg-red-500/20 text-red-600"
+              : "text-muted-foreground hover:bg-muted hover:text-red-600"
           }`}
         >
-          <span>👎</span>
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+            />
+          </svg>
           {event.downCount > 0 && <span>{event.downCount}</span>}
         </button>
         <button
           type="button"
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+            showComments
+              ? "bg-primary/20 text-primary"
+              : "text-muted-foreground hover:bg-muted hover:text-primary"
+          }`}
         >
-          <span>💬</span>
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
+          </svg>
           {event.commentCount > 0 && <span>{event.commentCount}</span>}
         </button>
       </div>
@@ -569,18 +999,35 @@ function EventComments({ eventId }: { eventId: Id<"eventFeed"> }) {
   }
 
   return (
-    <div className="pl-8 space-y-2">
+    <div className="pl-10 pt-2 space-y-2 border-t border-border mt-2">
       {/* Comment list */}
       {comments?.map((comment) => (
-        <div key={comment._id} className="flex items-start gap-2 text-xs">
-          <span className="font-medium shrink-0">{comment.userName}:</span>
-          <span className="flex-1 text-muted-foreground">{comment.text}</span>
+        <div key={comment._id} className="flex items-start gap-2 text-sm group">
+          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium shrink-0">
+            {comment.userName?.charAt(0).toUpperCase() || "?"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-xs">{comment.userName}</span>
+            <p className="text-xs text-muted-foreground">{comment.text}</p>
+          </div>
           <button
             type="button"
             onClick={() => handleDelete(comment._id)}
-            className="text-muted-foreground hover:text-destructive text-[10px]"
+            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity p-1"
           >
-            ×
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
       ))}
@@ -592,13 +1039,13 @@ function EventComments({ eventId }: { eventId: Id<"eventFeed"> }) {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Add a comment..."
-          className="flex-1 text-xs bg-background border rounded px-2 py-1"
+          className="flex-1 text-xs bg-muted/50 border border-border rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
           maxLength={500}
         />
         <button
           type="submit"
           disabled={isSubmitting || !newComment.trim()}
-          className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded disabled:opacity-50"
+          className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md font-medium disabled:opacity-50 hover:bg-primary/90 transition-colors"
         >
           Post
         </button>

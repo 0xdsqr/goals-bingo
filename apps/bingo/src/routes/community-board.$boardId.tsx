@@ -7,7 +7,7 @@ import type { Goal } from "@/lib/types"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 
-export const Route = createFileRoute("/community/$boardId")({
+export const Route = createFileRoute("/community-board/$boardId")({
   component: CommunityBoardPage,
 })
 
