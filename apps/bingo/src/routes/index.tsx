@@ -575,7 +575,7 @@ function ProfileMenu({ onSignOut }: { onSignOut: () => void }) {
   )
 }
 
-type CommunityTab = "public" | "communities"
+type CommunityTab = "public" | string // "public" or community ID
 
 function CommunitySection({
   eventFeedStatus,
@@ -588,6 +588,7 @@ function CommunitySection({
   onToggleOptIn: () => void
   onSignIn: () => void
 }) {
+  const communities = useQuery(api.social.getMyCommunities)
   const [activeTab, setActiveTab] = useState<CommunityTab>("public")
   const [showCreateCommunity, setShowCreateCommunity] = useState(false)
 
@@ -638,7 +639,7 @@ function CommunitySection({
         {/* Tabs */}
         <Authenticated>
           {eventFeedStatus?.isOptedIn && (
-            <div className="flex gap-1 mt-2">
+            <div className="flex gap-1 mt-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setActiveTab("public")}
@@ -648,18 +649,29 @@ function CommunitySection({
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                Public Feed
+                Public
               </button>
+              {communities?.map((community) => (
+                <button
+                  key={community._id}
+                  type="button"
+                  onClick={() => setActiveTab(community._id)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === community._id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {community.name}
+                </button>
+              ))}
               <button
                 type="button"
-                onClick={() => setActiveTab("communities")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  activeTab === "communities"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
+                onClick={() => setShowCreateCommunity(true)}
+                className="px-2 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                title="Create new community"
               >
-                My Communities
+                +
               </button>
             </div>
           )}
@@ -741,7 +753,7 @@ function CommunitySection({
               )}
             </div>
           ) : (
-            <CommunitiesList onCreateNew={() => setShowCreateCommunity(true)} />
+            <CommunityFeedInline communityId={activeTab as Id<"communities">} />
           )}
         </Authenticated>
       </CardContent>
@@ -755,70 +767,51 @@ function CommunitySection({
   )
 }
 
-function CommunitiesList({ onCreateNew }: { onCreateNew: () => void }) {
-  const communities = useQuery(api.social.getMyCommunities)
+// Inline community feed for tabs
+function CommunityFeedInline({ communityId }: { communityId: Id<"communities"> }) {
+  const feed = useQuery(api.social.getCommunityFeed, { communityId })
+  const community = useQuery(api.social.getCommunity, { communityId })
 
-  if (!communities || communities.length === 0) {
+  if (!community) {
     return (
       <div className="text-center py-6">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-          <svg
-            className="w-6 h-6 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
-        </div>
-        <p className="text-sm text-muted-foreground mb-3">
-          No private communities yet
-        </p>
-        <Button size="sm" variant="outline" onClick={onCreateNew}>
-          Create a Community
-        </Button>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-2">
-      {communities.map((community) => (
-        <Link
-          key={community._id}
-          to="/group/$communityId"
-          params={{ communityId: community._id }}
-          className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
-        >
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
+    <div className="space-y-3">
+      {/* Community header with invite button */}
+      <div className="flex items-center justify-between pb-2 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs">
             {community.name.charAt(0).toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate">{community.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {community.memberCount} members
-            </p>
-          </div>
-          <svg
-            className="w-4 h-4 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <span className="text-sm font-medium">{community.memberCount} members</span>
+        </div>
+        <Link to="/group/$communityId" params={{ communityId }}>
+          <Button variant="outline" size="sm" className="h-7 text-xs">
+            View
+          </Button>
         </Link>
-      ))}
+      </div>
+
+      {/* Feed */}
+      {feed && feed.length > 0 ? (
+        feed.map((event) => (
+          <EventFeedItemComponent
+            key={event._id}
+            event={event as EventFeedItem}
+          />
+        ))
+      ) : (
+        <div className="text-center py-6">
+          <p className="text-sm text-muted-foreground">
+            No activity yet. Members' progress will show here!
+          </p>
+        </div>
+      )}
     </div>
   )
 }
