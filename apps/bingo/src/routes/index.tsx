@@ -7,7 +7,7 @@ import {
   useMutation,
   useQuery,
 } from "convex/react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Board } from "@/components/bingo/board"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,8 @@ function HomePage() {
   const createBoard = useMutation(api.boards.create)
   const toggleEventFeedOptIn = useMutation(api.boards.toggleEventFeedOptIn)
   const rankDifficultyAction = useAction(api.boards.rankDifficulty)
+  const generateUploadUrl = useMutation(api.boards.generateUploadUrl)
+  const extractGoalsFromImage = useAction(api.boards.extractGoalsFromImage)
   const eventFeedStatus = useQuery(api.boards.getEventFeedStatus)
   const eventFeed = useQuery(api.boards.getEventFeed)
 
@@ -55,6 +57,54 @@ function HomePage() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [isRanking, setIsRanking] = useState(false)
   const [difficultyRank, setDifficultyRank] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImportFromPhoto = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0]
+    if (!file || !localBoard) return
+
+    setIsImporting(true)
+    try {
+      // Get upload URL
+      const uploadUrl = await generateUploadUrl()
+
+      // Upload the file
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+      const { storageId } = await result.json()
+
+      // Extract goals from image
+      const extraction = await extractGoalsFromImage({ storageId })
+
+      if (extraction.success && extraction.goals.length > 0) {
+        // Fill in the board with extracted goals
+        const nonFreeSpaceGoals = localBoard.goals.filter((g) => !g.isFreeSpace)
+        extraction.goals.forEach((goalText, index) => {
+          const goal = nonFreeSpaceGoals[index]
+          if (goal) {
+            updateGoal(goal.id, { text: goalText })
+          }
+        })
+      } else {
+        alert(extraction.error || "No goals found in image")
+      }
+    } catch (error) {
+      console.error("Import error:", error)
+      alert("Failed to import goals from image")
+    } finally {
+      setIsImporting(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
 
   const handleSave = async () => {
     if (!localBoard?.name.trim() || !localBoard) return
@@ -220,14 +270,33 @@ function HomePage() {
                   Clear
                 </Button>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleRankDifficulty}
-                disabled={isRanking}
-              >
-                {isRanking ? "Analyzing..." : "AI Difficulty"}
-              </Button>
+              <div className="flex gap-2">
+                <Authenticated>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImportFromPhoto}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isImporting}
+                  >
+                    {isImporting ? "Importing..." : "Import Photo"}
+                  </Button>
+                </Authenticated>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleRankDifficulty}
+                  disabled={isRanking}
+                >
+                  {isRanking ? "Analyzing..." : "AI Difficulty"}
+                </Button>
+              </div>
             </div>
             {difficultyRank && (
               <div className="mt-3 p-3 bg-muted rounded-lg">

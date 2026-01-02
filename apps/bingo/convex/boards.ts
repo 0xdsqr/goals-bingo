@@ -463,3 +463,106 @@ Provide a difficulty rating (Easy/Medium/Hard/Expert) and a brief 2-3 sentence e
     }
   },
 })
+
+// Generate upload URL for image
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+    return await ctx.storage.generateUploadUrl()
+  },
+})
+
+// Extract goals from uploaded image using vision AI
+export const extractGoalsFromImage = action({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    const openrouterToken = process.env.OPENROUTER_TOKEN
+    if (!openrouterToken) {
+      return {
+        success: false,
+        error: "AI service not configured.",
+        goals: [],
+      }
+    }
+
+    try {
+      // Get the image URL from storage
+      const imageUrl = await ctx.storage.getUrl(args.storageId)
+      if (!imageUrl) {
+        return { success: false, error: "Image not found.", goals: [] }
+      }
+
+      const openai = new OpenAI({
+        apiKey: openrouterToken,
+        baseURL:
+          "https://gateway.ai.cloudflare.com/v1/f8913f78ee578f0e62ccb9ad8a89c60f/goals-bingo/openrouter",
+      })
+
+      const response = await openai.chat.completions.create({
+        model: "openai/gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a goal extraction assistant. Extract goals from images of handwritten or typed goal lists.
+Return ONLY a JSON array of strings, with each goal as a separate item. Extract up to 24 goals (for a 5x5 bingo board, excluding center free space).
+If you see numbered items (1-10, etc), extract each as a separate goal.
+Clean up the text but preserve the meaning. If you can't read something, skip it.
+Return format: ["goal 1", "goal 2", ...]`,
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Extract the goals from this image as a JSON array:",
+              },
+              {
+                type: "image_url",
+                image_url: { url: imageUrl },
+              },
+            ],
+          },
+        ],
+        max_tokens: 1000,
+      })
+
+      const content = response.choices[0]?.message?.content || "[]"
+
+      // Parse the JSON array from the response
+      let goals: string[] = []
+      try {
+        // Try to extract JSON array from the response
+        const jsonMatch = content.match(/\[[\s\S]*\]/)
+        if (jsonMatch) {
+          goals = JSON.parse(jsonMatch[0])
+        }
+      } catch {
+        console.error("Failed to parse goals JSON:", content)
+        return {
+          success: false,
+          error: "Failed to parse goals from image.",
+          goals: [],
+        }
+      }
+
+      // Clean up and limit to 24 goals
+      goals = goals
+        .filter((g) => typeof g === "string" && g.trim().length > 0)
+        .map((g) => g.trim())
+        .slice(0, 24)
+
+      return { success: true, goals, error: null }
+    } catch (error) {
+      console.error("Vision AI error:", error)
+      return {
+        success: false,
+        error: "Failed to extract goals from image.",
+        goals: [],
+      }
+    }
+  },
+})
