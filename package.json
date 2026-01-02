@@ -1,0 +1,22 @@
+{
+  "name": "hoo",
+  "module": "index.ts",
+  "type": "module",
+  "workspaces": [
+    "tooling/typescript"
+  ],
+  "scripts": {
+    "build": "bun run --filter='@goals-bingo/*' build",     
+    "clean": "rm -rf packages/*/dist packages/*/coverage",
+    "changeset": "changeset",
+    "release": "bun run build && changeset version && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.29.8",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "private": true
+}
