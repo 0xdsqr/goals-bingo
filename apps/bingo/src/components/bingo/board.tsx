@@ -12,6 +12,13 @@ interface BoardProps {
     streakTargetDays?: number,
     streakStartDate?: number,
   ) => void
+  onUpdateProgress?: (
+    goalId: string,
+    isProgressGoal: boolean,
+    progressTarget?: number,
+    progressCurrent?: number,
+  ) => void
+  onIncrementProgress?: (goalId: string, delta: number) => void
   onToggleGoal: (goalId: string) => void
   onResetStreak?: (goalId: string) => void
   title?: string
@@ -24,6 +31,8 @@ export function Board({
   size,
   onUpdateGoal,
   onUpdateStreak,
+  onUpdateProgress,
+  onIncrementProgress,
   onToggleGoal,
   onResetStreak,
   title,
@@ -91,6 +100,17 @@ export function Board({
                   ? undefined
                   : (isStreak, targetDays, startDate) =>
                       onUpdateStreak(goal.id, isStreak, targetDays, startDate)
+              }
+              onUpdateProgress={
+                readOnly || !onUpdateProgress
+                  ? undefined
+                  : (isProgress, target, current) =>
+                      onUpdateProgress(goal.id, isProgress, target, current)
+              }
+              onIncrementProgress={
+                readOnly || !onIncrementProgress
+                  ? undefined
+                  : (delta) => onIncrementProgress(goal.id, delta)
               }
               onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
               onResetStreak={

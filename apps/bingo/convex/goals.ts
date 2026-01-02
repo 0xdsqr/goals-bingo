@@ -386,3 +386,73 @@ export const toggleComplete = mutation({
     }
   },
 })
+
+// Check and emit streak milestone events (7, 30, 60, 90 days)
+// This should be called periodically or when viewing a board
+export const checkStreakMilestones = mutation({
+  args: { boardId: v.id("boards") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return { checked: 0, milestones: [] }
+
+    const board = await ctx.db.get(args.boardId)
+    if (!board || board.userId !== userId) return { checked: 0, milestones: [] }
+
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_board", (q) => q.eq("boardId", args.boardId))
+      .collect()
+
+    const streakGoals = goals.filter(
+      (g) => g.isStreakGoal && g.streakStartDate && g.streakTargetDays,
+    )
+
+    const milestones = [7, 30, 60, 90]
+    const emittedMilestones: Array<{ goalId: string; days: number }> = []
+    const now = Date.now()
+
+    for (const goal of streakGoals) {
+      if (!goal.streakStartDate) continue
+
+      const elapsed = now - goal.streakStartDate
+      const currentDays = Math.floor(elapsed / (1000 * 60 * 60 * 24))
+
+      // Check each milestone
+      for (const milestone of milestones) {
+        if (currentDays >= milestone) {
+          // Check if we already emitted this milestone
+          // We store emitted milestones in metadata on the event
+          const existingMilestone = await ctx.db
+            .query("eventFeed")
+            .withIndex("by_goal", (q) => q.eq("goalId", goal._id))
+            .filter((q) =>
+              q.and(
+                q.eq(q.field("eventType"), "streak_milestone"),
+                q.eq(q.field("metadata"), JSON.stringify({ days: milestone })),
+              ),
+            )
+            .first()
+
+          if (!existingMilestone) {
+            await ctx.scheduler.runAfter(
+              0,
+              internal.boards.createEventFeedEntry,
+              {
+                userId,
+                eventType: "streak_milestone",
+                boardId: args.boardId,
+                goalId: goal._id,
+                boardName: board.name,
+                goalText: goal.text,
+                metadata: JSON.stringify({ days: milestone }),
+              },
+            )
+            emittedMilestones.push({ goalId: goal._id, days: milestone })
+          }
+        }
+      }
+    }
+
+    return { checked: streakGoals.length, milestones: emittedMilestones }
+  },
+})

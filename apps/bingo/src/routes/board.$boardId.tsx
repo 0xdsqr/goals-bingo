@@ -24,6 +24,7 @@ function BoardDetailPage() {
   const updateGoal = useMutation(api.goals.update)
   const toggleGoal = useMutation(api.goals.toggleComplete)
   const resetStreak = useMutation(api.goals.resetStreak)
+  const incrementProgress = useMutation(api.goals.incrementProgress)
   const updateBoard = useMutation(api.boards.update)
   const removeBoard = useMutation(api.boards.remove)
   const generateShareLink = useMutation(api.boards.generateShareLink)
@@ -134,6 +135,9 @@ function BoardDetailPage() {
     isStreakGoal: g.isStreakGoal,
     streakTargetDays: g.streakTargetDays,
     streakStartDate: g.streakStartDate,
+    isProgressGoal: g.isProgressGoal,
+    progressTarget: g.progressTarget,
+    progressCurrent: g.progressCurrent,
   }))
 
   const handleDelete = async () => {
@@ -156,8 +160,31 @@ function BoardDetailPage() {
     await updateGoal({
       id: goalId as Id<"goals">,
       isStreakGoal,
+      isProgressGoal: false, // Clear progress if switching to streak
       streakTargetDays,
       streakStartDate,
+    })
+  }
+
+  const handleUpdateProgress = async (
+    goalId: string,
+    isProgressGoal: boolean,
+    progressTarget?: number,
+    progressCurrent?: number,
+  ) => {
+    await updateGoal({
+      id: goalId as Id<"goals">,
+      isProgressGoal,
+      isStreakGoal: false, // Clear streak if switching to progress
+      progressTarget,
+      progressCurrent,
+    })
+  }
+
+  const handleIncrementProgress = async (goalId: string, delta: number) => {
+    await incrementProgress({
+      id: goalId as Id<"goals">,
+      delta,
     })
   }
 
@@ -303,6 +330,8 @@ function BoardDetailPage() {
             size={board.size}
             onUpdateGoal={handleUpdateGoal}
             onUpdateStreak={handleUpdateStreak}
+            onUpdateProgress={handleUpdateProgress}
+            onIncrementProgress={handleIncrementProgress}
             onToggleGoal={handleToggleGoal}
             onResetStreak={handleResetStreak}
           />

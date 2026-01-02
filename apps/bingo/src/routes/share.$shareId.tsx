@@ -50,6 +50,9 @@ function SharedBoardPage() {
     isStreakGoal: g.isStreakGoal,
     streakTargetDays: g.streakTargetDays,
     streakStartDate: g.streakStartDate,
+    isProgressGoal: g.isProgressGoal,
+    progressTarget: g.progressTarget,
+    progressCurrent: g.progressCurrent,
   }))
 
   const completedGoals = goals.filter((g) => g.isCompleted).length

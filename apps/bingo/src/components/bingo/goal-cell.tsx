@@ -20,6 +20,12 @@ interface GoalCellProps {
     streakTargetDays?: number,
     streakStartDate?: number,
   ) => void
+  onUpdateProgress?: (
+    isProgressGoal: boolean,
+    progressTarget?: number,
+    progressCurrent?: number,
+  ) => void
+  onIncrementProgress?: (delta: number) => void
   onToggle: () => void
   onResetStreak?: () => void
   readOnly?: boolean
@@ -72,10 +78,29 @@ function getStreakProgress(goal: Goal): {
   return { currentDays, targetDays, percent, isComplete, elapsedMs: elapsed }
 }
 
+// Calculate progress goal status
+function getProgressStatus(goal: Goal): {
+  current: number
+  target: number
+  percent: number
+  isComplete: boolean
+} | null {
+  if (!goal.isProgressGoal || !goal.progressTarget) {
+    return null
+  }
+  const current = goal.progressCurrent ?? 0
+  const target = goal.progressTarget
+  const percent = Math.min(100, Math.round((current / target) * 100))
+  const isComplete = current >= target
+  return { current, target, percent, isComplete }
+}
+
 export function GoalCell({
   goal,
   onUpdate,
   onUpdateStreak,
+  onUpdateProgress,
+  onIncrementProgress,
   onToggle,
   onResetStreak,
   readOnly = false,
@@ -83,13 +108,21 @@ export function GoalCell({
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [text, setText] = useState(goal.text)
   const [showStreakMenu, setShowStreakMenu] = useState(false)
+  const [showProgressMenu, setShowProgressMenu] = useState(false)
   const [isStreakGoal, setIsStreakGoal] = useState(goal.isStreakGoal ?? false)
+  const [isProgressGoal, setIsProgressGoal] = useState(
+    goal.isProgressGoal ?? false,
+  )
   const [streakTargetDays, setStreakTargetDays] = useState(
     goal.streakTargetDays ?? 30,
+  )
+  const [progressTarget, setProgressTarget] = useState(
+    goal.progressTarget ?? 5,
   )
   const [customStartDate, setCustomStartDate] = useState("")
   const [liveTime, setLiveTime] = useState("")
   const streakProgress = getStreakProgress(goal)
+  const progressStatus = getProgressStatus(goal)
 
   // Live timer for streak goals
   useEffect(() => {
@@ -109,18 +142,31 @@ export function GoalCell({
   useEffect(() => {
     setText(goal.text)
     setIsStreakGoal(goal.isStreakGoal ?? false)
+    setIsProgressGoal(goal.isProgressGoal ?? false)
     setStreakTargetDays(goal.streakTargetDays ?? 30)
-  }, [goal.text, goal.isStreakGoal, goal.streakTargetDays])
+    setProgressTarget(goal.progressTarget ?? 5)
+  }, [
+    goal.text,
+    goal.isStreakGoal,
+    goal.isProgressGoal,
+    goal.streakTargetDays,
+    goal.progressTarget,
+  ])
 
   const handleSave = () => {
     if (text !== goal.text) {
       onUpdate(text)
     }
-    if (onUpdateStreak) {
+    if (onUpdateStreak && isStreakGoal) {
       const startDate = customStartDate
         ? new Date(customStartDate).getTime()
         : undefined
-      onUpdateStreak(isStreakGoal, streakTargetDays, startDate)
+      onUpdateStreak(true, streakTargetDays, startDate)
+    } else if (onUpdateProgress && isProgressGoal) {
+      onUpdateProgress(true, progressTarget, 0)
+    } else if (onUpdateStreak) {
+      // Reset to one-time goal
+      onUpdateStreak(false)
     }
     setShowEditDialog(false)
     setCustomStartDate("")
@@ -129,7 +175,9 @@ export function GoalCell({
   const handleCancel = () => {
     setText(goal.text)
     setIsStreakGoal(goal.isStreakGoal ?? false)
+    setIsProgressGoal(goal.isProgressGoal ?? false)
     setStreakTargetDays(goal.streakTargetDays ?? 30)
+    setProgressTarget(goal.progressTarget ?? 5)
     setCustomStartDate("")
     setShowEditDialog(false)
   }
@@ -290,13 +338,168 @@ export function GoalCell({
           setText={setText}
           isStreakGoal={isStreakGoal}
           setIsStreakGoal={setIsStreakGoal}
+          isProgressGoal={isProgressGoal}
+          setIsProgressGoal={setIsProgressGoal}
           streakTargetDays={streakTargetDays}
           setStreakTargetDays={setStreakTargetDays}
+          progressTarget={progressTarget}
+          setProgressTarget={setProgressTarget}
           customStartDate={customStartDate}
           setCustomStartDate={setCustomStartDate}
           onSave={handleSave}
           onCancel={handleCancel}
-          showStreakOptions={!!onUpdateStreak}
+          showGoalTypeOptions={!!onUpdateStreak || !!onUpdateProgress}
+        />
+      </>
+    )
+  }
+
+  // Progress goal - special rendering with progress bar and increment buttons
+  if (goal.isProgressGoal && progressStatus) {
+    const { current, target, percent, isComplete } = progressStatus
+    return (
+      <>
+        <div
+          role="button"
+          tabIndex={readOnly ? -1 : 0}
+          className={cn(
+            "w-full h-full rounded-lg p-1 flex flex-col items-center justify-center transition-all relative group overflow-hidden",
+            "border-2",
+            !readOnly && "cursor-pointer hover:border-primary/50",
+            isComplete && "bg-green-500/20 border-green-500",
+            !isComplete && "bg-blue-500/10 border-blue-500/50",
+          )}
+          onClick={() => {
+            if (readOnly) return
+            setShowProgressMenu(!showProgressMenu)
+          }}
+          onKeyDown={(e) => {
+            if (readOnly) return
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              setShowProgressMenu(!showProgressMenu)
+            }
+          }}
+        >
+          {/* Progress bar */}
+          <div className="w-full px-1 mb-1">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full transition-all duration-300",
+                  isComplete ? "bg-green-500" : "bg-blue-500",
+                )}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+
+          <span className="text-[7px] sm:text-[9px] text-center break-words line-clamp-2 leading-tight flex-1 min-h-0">
+            {goal.text}
+          </span>
+
+          <span
+            className={cn(
+              "text-[8px] sm:text-[10px] font-semibold shrink-0",
+              isComplete ? "text-green-500" : "text-blue-500",
+            )}
+          >
+            {current}/{target}
+          </span>
+
+          {/* Progress menu overlay */}
+          {showProgressMenu && !readOnly && (
+            <div
+              role="dialog"
+              aria-label="Progress options"
+              className="absolute inset-0 bg-background/95 rounded-lg flex flex-col items-center justify-center gap-1 p-1 z-10"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <span className="text-[9px] font-medium mb-1">
+                {isComplete ? "Complete!" : `${current} of ${target}`}
+              </span>
+              {!isComplete && onIncrementProgress && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (current > 0) onIncrementProgress(-1)
+                    }}
+                    disabled={current <= 0}
+                    className="w-6 h-6 flex items-center justify-center bg-muted rounded hover:bg-muted/80 disabled:opacity-30"
+                  >
+                    <span className="text-sm font-bold">-</span>
+                  </button>
+                  <span className="text-sm font-bold min-w-[2rem] text-center">
+                    {current}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onIncrementProgress(1)
+                    }}
+                    className="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    <span className="text-sm font-bold">+</span>
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowProgressMenu(false)
+                }}
+                className="text-[8px] px-2 py-1 bg-muted rounded hover:bg-muted/80 mt-1"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
+          {/* Edit button */}
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowEditDialog(true)
+              }}
+              className="absolute top-0.5 right-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[8px] p-0.5 hover:bg-accent rounded"
+            >
+              edit
+            </button>
+          )}
+
+          {isComplete && (
+            <span className="absolute bottom-0.5 right-0.5 text-green-500 font-bold text-[8px]">
+              done
+            </span>
+          )}
+        </div>
+
+        {/* Edit Dialog */}
+        <GoalEditDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          text={text}
+          setText={setText}
+          isStreakGoal={isStreakGoal}
+          setIsStreakGoal={setIsStreakGoal}
+          isProgressGoal={isProgressGoal}
+          setIsProgressGoal={setIsProgressGoal}
+          streakTargetDays={streakTargetDays}
+          setStreakTargetDays={setStreakTargetDays}
+          progressTarget={progressTarget}
+          setProgressTarget={setProgressTarget}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          showGoalTypeOptions={!!onUpdateStreak || !!onUpdateProgress}
         />
       </>
     )
@@ -373,13 +576,17 @@ export function GoalCell({
         setText={setText}
         isStreakGoal={isStreakGoal}
         setIsStreakGoal={setIsStreakGoal}
+        isProgressGoal={isProgressGoal}
+        setIsProgressGoal={setIsProgressGoal}
         streakTargetDays={streakTargetDays}
         setStreakTargetDays={setStreakTargetDays}
+        progressTarget={progressTarget}
+        setProgressTarget={setProgressTarget}
         customStartDate={customStartDate}
         setCustomStartDate={setCustomStartDate}
         onSave={handleSave}
         onCancel={handleCancel}
-        showStreakOptions={!!onUpdateStreak}
+        showGoalTypeOptions={!!onUpdateStreak || !!onUpdateProgress}
       />
     </>
   )
@@ -393,13 +600,17 @@ function GoalEditDialog({
   setText,
   isStreakGoal,
   setIsStreakGoal,
+  isProgressGoal,
+  setIsProgressGoal,
   streakTargetDays,
   setStreakTargetDays,
+  progressTarget,
+  setProgressTarget,
   customStartDate,
   setCustomStartDate,
   onSave,
   onCancel,
-  showStreakOptions,
+  showGoalTypeOptions,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -407,14 +618,26 @@ function GoalEditDialog({
   setText: (text: string) => void
   isStreakGoal: boolean
   setIsStreakGoal: (isStreak: boolean) => void
+  isProgressGoal: boolean
+  setIsProgressGoal: (isProgress: boolean) => void
   streakTargetDays: number
   setStreakTargetDays: (days: number) => void
+  progressTarget: number
+  setProgressTarget: (target: number) => void
   customStartDate: string
   setCustomStartDate: (date: string) => void
   onSave: () => void
   onCancel: () => void
-  showStreakOptions: boolean
+  showGoalTypeOptions: boolean
 }) {
+  // Determine which goal type is selected
+  const goalType = isStreakGoal ? "streak" : isProgressGoal ? "progress" : "one-time"
+
+  const handleTypeChange = (type: "one-time" | "streak" | "progress") => {
+    setIsStreakGoal(type === "streak")
+    setIsProgressGoal(type === "progress")
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -436,38 +659,54 @@ function GoalEditDialog({
           </div>
 
           {/* Goal type selection */}
-          {showStreakOptions && (
+          {showGoalTypeOptions && (
             <div className="space-y-3">
               <Label>Goal type</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant={!isStreakGoal ? "default" : "outline"}
+                  variant={goalType === "one-time" ? "default" : "outline"}
                   className="flex-1"
-                  onClick={() => setIsStreakGoal(false)}
+                  size="sm"
+                  onClick={() => handleTypeChange("one-time")}
                 >
                   One-time
                 </Button>
                 <Button
                   type="button"
-                  variant={isStreakGoal ? "default" : "outline"}
+                  variant={goalType === "streak" ? "default" : "outline"}
+                  size="sm"
                   className={cn(
                     "flex-1",
-                    isStreakGoal && "bg-orange-500 hover:bg-orange-600",
+                    goalType === "streak" && "bg-orange-500 hover:bg-orange-600",
                   )}
-                  onClick={() => setIsStreakGoal(true)}
+                  onClick={() => handleTypeChange("streak")}
                 >
                   Streak
                 </Button>
+                <Button
+                  type="button"
+                  variant={goalType === "progress" ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "flex-1",
+                    goalType === "progress" && "bg-blue-500 hover:bg-blue-600",
+                  )}
+                  onClick={() => handleTypeChange("progress")}
+                >
+                  Count
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {isStreakGoal
+                {goalType === "streak"
                   ? "Track consecutive days (e.g., 30 days sober)"
-                  : "Complete once to mark as done"}
+                  : goalType === "progress"
+                    ? "Track progress toward a count (e.g., visit 5 restaurants)"
+                    : "Complete once to mark as done"}
               </p>
 
               {/* Streak options */}
-              {isStreakGoal && (
+              {goalType === "streak" && (
                 <div className="space-y-3 pt-2 border-t">
                   <div className="space-y-2">
                     <Label>Target days</Label>
@@ -517,6 +756,46 @@ function GoalEditDialog({
                     <p className="text-xs text-muted-foreground">
                       Leave blank to start today. Set a past date if your streak
                       already started.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress options */}
+              {goalType === "progress" && (
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-2">
+                    <Label>Target count</Label>
+                    <div className="flex gap-2">
+                      {[3, 5, 10, 12].map((count) => (
+                        <Button
+                          key={count}
+                          type="button"
+                          variant={
+                            progressTarget === count ? "default" : "outline"
+                          }
+                          size="sm"
+                          className={cn(
+                            progressTarget === count &&
+                              "bg-blue-500 hover:bg-blue-600",
+                          )}
+                          onClick={() => setProgressTarget(count)}
+                        >
+                          {count}
+                        </Button>
+                      ))}
+                      <Input
+                        type="number"
+                        value={progressTarget}
+                        onChange={(e) =>
+                          setProgressTarget(Number(e.target.value) || 5)
+                        }
+                        className="w-20"
+                        min={1}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      How many times to complete this goal
                     </p>
                   </div>
                 </div>

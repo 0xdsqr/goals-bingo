@@ -8,6 +8,10 @@ export interface Goal {
   isStreakGoal?: boolean
   streakTargetDays?: number
   streakStartDate?: number
+  // Progress goal fields (e.g., "Visit 5 restaurants" - 0/5, 1/5...)
+  isProgressGoal?: boolean
+  progressTarget?: number
+  progressCurrent?: number
 }
 
 export interface Board {
