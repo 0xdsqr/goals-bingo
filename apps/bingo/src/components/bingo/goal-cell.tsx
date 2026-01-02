@@ -25,26 +25,51 @@ interface GoalCellProps {
   readOnly?: boolean
 }
 
+// Format elapsed time as compact string
+function formatElapsedTime(ms: number): string {
+  if (ms < 0) return "0s"
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) {
+    const h = hours % 24
+    return `${days}d ${h}h`
+  }
+  if (hours > 0) {
+    const m = minutes % 60
+    return `${hours}h ${m}m`
+  }
+  if (minutes > 0) {
+    const s = seconds % 60
+    return `${minutes}m ${s}s`
+  }
+  return `${seconds}s`
+}
+
 // Calculate streak progress
 function getStreakProgress(goal: Goal): {
   currentDays: number
   targetDays: number
   percent: number
   isComplete: boolean
+  elapsedMs: number
 } | null {
   if (!goal.isStreakGoal || !goal.streakStartDate || !goal.streakTargetDays) {
     return null
   }
   const now = Date.now()
-  const elapsed = now - goal.streakStartDate
-  const currentDays = Math.max(0, Math.floor(elapsed / (1000 * 60 * 60 * 24)))
+  const elapsed = Math.max(0, now - goal.streakStartDate)
+  const currentDays = Math.floor(elapsed / (1000 * 60 * 60 * 24))
   const targetDays = goal.streakTargetDays
+  const targetMs = targetDays * 24 * 60 * 60 * 1000
   const percent = Math.min(
     100,
-    Math.max(0, Math.round((currentDays / targetDays) * 100)),
+    Math.max(0, Math.round((elapsed / targetMs) * 100)),
   )
-  const isComplete = currentDays >= targetDays
-  return { currentDays, targetDays, percent, isComplete }
+  const isComplete = elapsed >= targetMs
+  return { currentDays, targetDays, percent, isComplete, elapsedMs: elapsed }
 }
 
 export function GoalCell({
@@ -63,7 +88,22 @@ export function GoalCell({
     goal.streakTargetDays ?? 30,
   )
   const [customStartDate, setCustomStartDate] = useState("")
+  const [liveTime, setLiveTime] = useState("")
   const streakProgress = getStreakProgress(goal)
+
+  // Live timer for streak goals
+  useEffect(() => {
+    if (!goal.isStreakGoal || !goal.streakStartDate) return
+
+    const updateTime = () => {
+      const elapsed = Math.max(0, Date.now() - goal.streakStartDate!)
+      setLiveTime(formatElapsedTime(elapsed))
+    }
+
+    updateTime()
+    const interval = setInterval(updateTime, 1000)
+    return () => clearInterval(interval)
+  }, [goal.isStreakGoal, goal.streakStartDate])
 
   // Sync state when goal changes externally
   useEffect(() => {
@@ -166,8 +206,8 @@ export function GoalCell({
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[8px] sm:text-[10px] font-bold">
-              {currentDays}
+            <span className="absolute inset-0 flex items-center justify-center text-[6px] sm:text-[8px] font-bold font-mono">
+              {liveTime}
             </span>
           </div>
 
