@@ -106,6 +106,7 @@ export function GoalCell({
   readOnly = false,
 }: GoalCellProps) {
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
   const [text, setText] = useState(goal.text)
   const [showStreakMenu, setShowStreakMenu] = useState(false)
   const [showProgressMenu, setShowProgressMenu] = useState(false)
@@ -518,7 +519,10 @@ export function GoalCell({
           isEmpty && "bg-muted/50 border-dashed border-muted-foreground/30",
         )}
         onClick={() => {
-          if (readOnly) return
+          if (readOnly) {
+            if (!isEmpty) setShowViewDialog(true)
+            return
+          }
           if (isEmpty) {
             setShowEditDialog(true)
           } else {
@@ -526,7 +530,13 @@ export function GoalCell({
           }
         }}
         onKeyDown={(e) => {
-          if (readOnly) return
+          if (readOnly) {
+            if ((e.key === "Enter" || e.key === " ") && !isEmpty) {
+              e.preventDefault()
+              setShowViewDialog(true)
+            }
+            return
+          }
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault()
             if (isEmpty) {
@@ -585,6 +595,16 @@ export function GoalCell({
         onSave={handleSave}
         onCancel={handleCancel}
         showGoalTypeOptions={!!onUpdateStreak || !!onUpdateProgress}
+      />
+
+      {/* Read-only View Dialog */}
+      <GoalViewDialog
+        open={showViewDialog}
+        onOpenChange={setShowViewDialog}
+        goal={goal}
+        streakProgress={streakProgress}
+        progressStatus={progressStatus}
+        liveTime={liveTime}
       />
     </>
   )
@@ -827,6 +847,135 @@ function GoalEditDialog({
           </Button>
           <Button type="button" onClick={onSave}>
             Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Read-only view dialog for shared boards
+function GoalViewDialog({
+  open,
+  onOpenChange,
+  goal,
+  streakProgress,
+  progressStatus,
+  liveTime,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  goal: Goal
+  streakProgress: ReturnType<typeof getStreakProgress>
+  progressStatus: ReturnType<typeof getProgressStatus>
+  liveTime: string
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Goal Details</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Goal Text */}
+          <div>
+            <Label className="text-muted-foreground text-xs">Goal</Label>
+            <p className="text-sm font-medium mt-1">{goal.text}</p>
+          </div>
+
+          {/* Status */}
+          <div>
+            <Label className="text-muted-foreground text-xs">Status</Label>
+            <p className={cn(
+              "text-sm font-medium mt-1",
+              goal.isCompleted ? "text-green-500" : "text-muted-foreground"
+            )}>
+              {goal.isCompleted ? "Completed" : "In Progress"}
+            </p>
+          </div>
+
+          {/* Streak Info */}
+          {goal.isStreakGoal && streakProgress && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Streak Progress</Label>
+              <div className="flex items-center gap-3">
+                <div className="relative w-16 h-16">
+                  <svg className="w-16 h-16 -rotate-90">
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r="28"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      className="text-muted"
+                    />
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r="28"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      strokeDasharray={`${streakProgress.percent * 1.76} 176`}
+                      className={streakProgress.isComplete ? "text-green-500" : "text-orange-500"}
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold font-mono">
+                    {liveTime}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">
+                    {streakProgress.currentDays} / {streakProgress.targetDays} days
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {streakProgress.percent}% complete
+                  </p>
+                  {goal.streakStartDate && (
+                    <p className="text-xs text-muted-foreground">
+                      Started {new Date(goal.streakStartDate).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Progress Info */}
+          {goal.isProgressGoal && progressStatus && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Progress</Label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">
+                    {progressStatus.current} / {progressStatus.target}
+                  </span>
+                  <span className={cn(
+                    "font-semibold",
+                    progressStatus.isComplete ? "text-green-500" : "text-blue-500"
+                  )}>
+                    {progressStatus.percent}%
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-300",
+                      progressStatus.isComplete ? "bg-green-500" : "bg-blue-500"
+                    )}
+                    style={{ width: `${progressStatus.percent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
