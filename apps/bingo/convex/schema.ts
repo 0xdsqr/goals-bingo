@@ -1,6 +1,6 @@
-import { authTables } from "@convex-dev/auth/server"
-import { defineSchema, defineTable } from "convex/server"
-import { v } from "convex/values"
+import { authTables } from "@convex-dev/auth/server";
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
 export default defineSchema({
   ...authTables,
@@ -57,4 +57,4 @@ export default defineSchema({
     boardName: v.string(),
     createdAt: v.number(),
   }).index("by_created", ["createdAt"]),
-})
+});

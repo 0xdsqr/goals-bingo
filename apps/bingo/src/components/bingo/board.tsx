@@ -1,23 +1,23 @@
-import type { Goal } from "@/lib/types"
-import { BINGO_LETTERS, checkBingo } from "@/lib/types"
-import { cn } from "@/lib/utils"
-import { GoalCell } from "./goal-cell"
+import type { Goal } from "@/lib/types";
+import { BINGO_LETTERS, checkBingo } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { GoalCell } from "./goal-cell";
 
 interface BoardProps {
-  goals: Goal[]
-  size: number
-  onUpdateGoal: (goalId: string, text: string) => void
+  goals: Goal[];
+  size: number;
+  onUpdateGoal: (goalId: string, text: string) => void;
   onUpdateStreak?: (
     goalId: string,
     isStreakGoal: boolean,
     streakTargetDays?: number,
     streakStartDate?: number,
-  ) => void
-  onToggleGoal: (goalId: string) => void
-  onResetStreak?: (goalId: string) => void
-  title?: string
-  description?: string
-  readOnly?: boolean
+  ) => void;
+  onToggleGoal: (goalId: string) => void;
+  onResetStreak?: (goalId: string) => void;
+  title?: string;
+  description?: string;
+  readOnly?: boolean;
 }
 
 export function Board({
@@ -31,12 +31,12 @@ export function Board({
   description,
   readOnly = false,
 }: BoardProps) {
-  const sortedGoals = [...goals].sort((a, b) => a.position - b.position)
-  const hasBingo = checkBingo(goals, size)
-  const nonFreeSpaceCount = goals.filter((g) => !g.isFreeSpace).length
+  const sortedGoals = [...goals].sort((a, b) => a.position - b.position);
+  const hasBingo = checkBingo(goals, size);
+  const nonFreeSpaceCount = goals.filter((g) => !g.isFreeSpace).length;
   const nonFreeSpaceCompleted = goals.filter(
     (g) => g.isCompleted && !g.isFreeSpace,
-  ).length
+  ).length;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -112,5 +112,5 @@ export function Board({
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,45 +1,45 @@
-import { useAuthActions } from "@convex-dev/auth/react"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { useAuthActions } from "@convex-dev/auth/react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Authenticated,
   Unauthenticated,
   useAction,
   useMutation,
   useQuery,
-} from "convex/react"
-import { useRef, useState } from "react"
-import { SignInDialog } from "@/components/auth/sign-in-dialog"
-import { Board } from "@/components/bingo/board"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useLocalBoard } from "@/lib/use-local-board"
-import { api } from "../../convex/_generated/api"
+} from "convex/react";
+import { useRef, useState } from "react";
+import { SignInDialog } from "@/components/auth/sign-in-dialog";
+import { Board } from "@/components/bingo/board";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useLocalBoard } from "@/lib/use-local-board";
+import { api } from "../../convex/_generated/api";
 
 type EventFeedItem = {
-  _id: string
-  userId: string
-  eventType: "board_created" | "goal_completed" | "board_completed"
-  boardId?: string
-  boardName: string
-  createdAt: number
-  userName?: string
-  shareId?: string
-}
+  _id: string;
+  userId: string;
+  eventType: "board_created" | "goal_completed" | "board_completed";
+  boardId?: string;
+  boardName: string;
+  createdAt: number;
+  userName?: string;
+  shareId?: string;
+};
 
 export const Route = createFileRoute("/")({
   component: HomePage,
-})
+});
 
 function HomePage() {
-  const { signOut } = useAuthActions()
-  const createBoard = useMutation(api.boards.create)
-  const toggleEventFeedOptIn = useMutation(api.boards.toggleEventFeedOptIn)
-  const rankDifficultyAction = useAction(api.boards.rankDifficulty)
-  const generateUploadUrl = useMutation(api.boards.generateUploadUrl)
-  const extractGoalsFromImage = useAction(api.boards.extractGoalsFromImage)
-  const eventFeedStatus = useQuery(api.boards.getEventFeedStatus)
-  const eventFeed = useQuery(api.boards.getEventFeed)
+  const { signOut } = useAuthActions();
+  const createBoard = useMutation(api.boards.create);
+  const toggleEventFeedOptIn = useMutation(api.boards.toggleEventFeedOptIn);
+  const rankDifficultyAction = useAction(api.boards.rankDifficulty);
+  const generateUploadUrl = useMutation(api.boards.generateUploadUrl);
+  const extractGoalsFromImage = useAction(api.boards.extractGoalsFromImage);
+  const eventFeedStatus = useQuery(api.boards.getEventFeedStatus);
+  const eventFeed = useQuery(api.boards.getEventFeed);
 
   const {
     board: localBoard,
@@ -50,113 +50,115 @@ function HomePage() {
     toggleGoal,
     clear,
     getExportData,
-  } = useLocalBoard()
+  } = useLocalBoard();
 
-  const [showSignIn, setShowSignIn] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [isRanking, setIsRanking] = useState(false)
-  const [difficultyRank, setDifficultyRank] = useState<string | null>(null)
-  const [isImporting, setIsImporting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isRanking, setIsRanking] = useState(false);
+  const [difficultyRank, setDifficultyRank] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportFromPhoto = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const file = event.target.files?.[0]
-    if (!file || !localBoard) return
+    const file = event.target.files?.[0];
+    if (!file || !localBoard) return;
 
-    setIsImporting(true)
+    setIsImporting(true);
     try {
       // Get upload URL
-      const uploadUrl = await generateUploadUrl()
+      const uploadUrl = await generateUploadUrl();
 
       // Upload the file
       const result = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: file,
-      })
-      const { storageId } = await result.json()
+      });
+      const { storageId } = await result.json();
 
       // Extract goals from image
-      const extraction = await extractGoalsFromImage({ storageId })
+      const extraction = await extractGoalsFromImage({ storageId });
 
       if (extraction.success && extraction.goals.length > 0) {
         // Fill in the board with extracted goals
-        const nonFreeSpaceGoals = localBoard.goals.filter((g) => !g.isFreeSpace)
+        const nonFreeSpaceGoals = localBoard.goals.filter(
+          (g) => !g.isFreeSpace,
+        );
         extraction.goals.forEach((goalText, index) => {
-          const goal = nonFreeSpaceGoals[index]
+          const goal = nonFreeSpaceGoals[index];
           if (goal) {
-            updateGoal(goal.id, { text: goalText })
+            updateGoal(goal.id, { text: goalText });
           }
-        })
+        });
       } else {
-        alert(extraction.error || "No goals found in image")
+        alert(extraction.error || "No goals found in image");
       }
     } catch (error) {
-      console.error("Import error:", error)
-      alert("Failed to import goals from image")
+      console.error("Import error:", error);
+      alert("Failed to import goals from image");
     } finally {
-      setIsImporting(false)
+      setIsImporting(false);
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = ""
+        fileInputRef.current.value = "";
       }
     }
-  }
+  };
 
   const handleSave = async () => {
-    if (!localBoard?.name.trim() || !localBoard) return
-    setIsSaving(true)
+    if (!localBoard?.name.trim() || !localBoard) return;
+    setIsSaving(true);
     try {
-      const goals = getExportData()
+      const goals = getExportData();
       await createBoard({
         name: localBoard.name.trim(),
         size: localBoard.size,
         year: new Date().getFullYear(),
         goals: goals ?? undefined,
-      })
-      clear()
+      });
+      clear();
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleToggleOptIn = async () => {
-    await toggleEventFeedOptIn()
-  }
+    await toggleEventFeedOptIn();
+  };
 
   const handleRankDifficulty = async () => {
-    if (!localBoard) return
+    if (!localBoard) return;
     const goalsWithText = localBoard.goals.filter(
       (g) => g.text && !g.isFreeSpace,
-    )
+    );
     if (goalsWithText.length === 0) {
-      setDifficultyRank("Add some goals first to get a difficulty ranking!")
-      return
+      setDifficultyRank("Add some goals first to get a difficulty ranking!");
+      return;
     }
 
-    setIsRanking(true)
-    setDifficultyRank(null)
+    setIsRanking(true);
+    setDifficultyRank(null);
     try {
       const result = await rankDifficultyAction({
         goals: goalsWithText.map((g) => g.text),
-      })
-      setDifficultyRank(result.ranking || "Unable to rank at this time.")
+      });
+      setDifficultyRank(result.ranking || "Unable to rank at this time.");
     } catch {
-      setDifficultyRank("Failed to get ranking. Please try again.")
+      setDifficultyRank("Failed to get ranking. Please try again.");
     } finally {
-      setIsRanking(false)
+      setIsRanking(false);
     }
-  }
+  };
 
   if (!isLoaded || !localBoard) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -198,8 +200,8 @@ function HomePage() {
                   onChange={(e) => updateBoardName(e.target.value)}
                   onBlur={() => setIsEditingName(false)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") setIsEditingName(false)
-                    if (e.key === "Escape") setIsEditingName(false)
+                    if (e.key === "Enter") setIsEditingName(false);
+                    if (e.key === "Escape") setIsEditingName(false);
                   }}
                   autoFocus
                   className="flex-1 font-bold h-8"
@@ -380,20 +382,20 @@ function HomePage() {
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
-  )
+  );
 }
 
 function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
   const getTimeAgo = (timestamp: number) => {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000)
-    if (seconds < 60) return "now"
-    const minutes = Math.floor(seconds / 60)
-    if (minutes < 60) return `${minutes}m`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h`
-    const days = Math.floor(hours / 24)
-    return `${days}d`
-  }
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return "now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  };
 
   const getBoardNameElement = () => {
     if (event.shareId) {
@@ -405,23 +407,23 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         >
           {event.boardName}
         </Link>
-      )
+      );
     }
-    return <span>"{event.boardName}"</span>
-  }
+    return <span>"{event.boardName}"</span>;
+  };
 
   const getEventMessage = () => {
     switch (event.eventType) {
       case "board_created":
-        return <>created {getBoardNameElement()}</>
+        return <>created {getBoardNameElement()}</>;
       case "goal_completed":
-        return <>completed a goal</>
+        return <>completed a goal</>;
       case "board_completed":
-        return <>finished {getBoardNameElement()}!</>
+        return <>finished {getBoardNameElement()}!</>;
       default:
-        return <>did something</>
+        return <>did something</>;
     }
-  }
+  };
 
   return (
     <div className="flex items-center gap-2 p-2 rounded bg-muted/50">
@@ -438,5 +440,5 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         {getTimeAgo(event.createdAt)}
       </span>
     </div>
-  )
+  );
 }

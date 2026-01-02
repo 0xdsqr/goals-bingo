@@ -1,25 +1,25 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { useQuery } from "convex/react"
-import { Board } from "@/components/bingo/board"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Goal } from "@/lib/types"
-import { api } from "../../convex/_generated/api"
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
+import { Board } from "@/components/bingo/board";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Goal } from "@/lib/types";
+import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/share/$shareId")({
   component: SharedBoardPage,
-})
+});
 
 function SharedBoardPage() {
-  const { shareId } = Route.useParams()
-  const board = useQuery(api.boards.getSharedBoard, { shareId })
+  const { shareId } = Route.useParams();
+  const board = useQuery(api.boards.getSharedBoard, { shareId });
 
   if (board === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    )
+    );
   }
 
   if (board === null) {
@@ -37,7 +37,7 @@ function SharedBoardPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // Map Convex goals to local Goal type
@@ -47,11 +47,11 @@ function SharedBoardPage() {
     position: g.position,
     isCompleted: g.isCompleted,
     isFreeSpace: g.isFreeSpace,
-  }))
+  }));
 
-  const completedGoals = goals.filter((g) => g.isCompleted).length
-  const totalGoals = goals.length
-  const progress = Math.round((completedGoals / totalGoals) * 100)
+  const completedGoals = goals.filter((g) => g.isCompleted).length;
+  const totalGoals = goals.length;
+  const progress = Math.round((completedGoals / totalGoals) * 100);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
@@ -107,5 +107,5 @@ function SharedBoardPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

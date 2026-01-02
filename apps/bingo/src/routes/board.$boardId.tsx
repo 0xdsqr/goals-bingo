@@ -1,88 +1,88 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react"
-import { useCallback, useState } from "react"
-import { SignInDialog } from "@/components/auth/sign-in-dialog"
-import { Board } from "@/components/bingo/board"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Goal } from "@/lib/types"
-import { api } from "../../convex/_generated/api"
-import type { Id } from "../../convex/_generated/dataModel"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useCallback, useState } from "react";
+import { SignInDialog } from "@/components/auth/sign-in-dialog";
+import { Board } from "@/components/bingo/board";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Goal } from "@/lib/types";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/board/$boardId")({
   component: BoardDetailPage,
-})
+});
 
 function BoardDetailPage() {
-  const { boardId } = Route.useParams()
-  const navigate = useNavigate()
-  const { isLoading: authLoading, isAuthenticated } = useConvexAuth()
+  const { boardId } = Route.useParams();
+  const navigate = useNavigate();
+  const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
 
   const board = useQuery(api.boards.getWithGoals, {
     id: boardId as Id<"boards">,
-  })
-  const updateGoal = useMutation(api.goals.update)
-  const toggleGoal = useMutation(api.goals.toggleComplete)
-  const resetStreak = useMutation(api.goals.resetStreak)
-  const updateBoard = useMutation(api.boards.update)
-  const removeBoard = useMutation(api.boards.remove)
-  const generateShareLink = useMutation(api.boards.generateShareLink)
-  const removeShareLink = useMutation(api.boards.removeShareLink)
-  const rankDifficultyAction = useAction(api.boards.rankDifficulty)
+  });
+  const updateGoal = useMutation(api.goals.update);
+  const toggleGoal = useMutation(api.goals.toggleComplete);
+  const resetStreak = useMutation(api.goals.resetStreak);
+  const updateBoard = useMutation(api.boards.update);
+  const removeBoard = useMutation(api.boards.remove);
+  const generateShareLink = useMutation(api.boards.generateShareLink);
+  const removeShareLink = useMutation(api.boards.removeShareLink);
+  const rankDifficultyAction = useAction(api.boards.rankDifficulty);
 
-  const [showSignIn, setShowSignIn] = useState(false)
-  const [isSharing, setIsSharing] = useState(false)
-  const [showCopied, setShowCopied] = useState(false)
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [editName, setEditName] = useState("")
-  const [isRanking, setIsRanking] = useState(false)
-  const [difficultyRank, setDifficultyRank] = useState<string | null>(null)
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [isRanking, setIsRanking] = useState(false);
+  const [difficultyRank, setDifficultyRank] = useState<string | null>(null);
 
   const handleShare = useCallback(async () => {
-    if (!board) return
-    setIsSharing(true)
+    if (!board) return;
+    setIsSharing(true);
     try {
-      const { shareId } = await generateShareLink({ id: board._id })
-      const shareUrl = `${window.location.origin}/share/${shareId}`
+      const { shareId } = await generateShareLink({ id: board._id });
+      const shareUrl = `${window.location.origin}/share/${shareId}`;
 
       // Try native share on mobile first
       if (navigator.share) {
         await navigator.share({
           title: board.name,
           url: shareUrl,
-        })
+        });
       } else {
         // Fallback to clipboard
-        await navigator.clipboard.writeText(shareUrl)
-        setShowCopied(true)
-        setTimeout(() => setShowCopied(false), 2000)
+        await navigator.clipboard.writeText(shareUrl);
+        setShowCopied(true);
+        setTimeout(() => setShowCopied(false), 2000);
       }
     } catch (err) {
       // If share was cancelled or clipboard failed, try fallback
       if ((err as Error).name !== "AbortError") {
-        const { shareId } = board
+        const { shareId } = board;
         if (shareId) {
-          const shareUrl = `${window.location.origin}/share/${shareId}`
+          const shareUrl = `${window.location.origin}/share/${shareId}`;
           // Last resort fallback - prompt user
-          prompt("Copy this link:", shareUrl)
+          prompt("Copy this link:", shareUrl);
         }
       }
     } finally {
-      setIsSharing(false)
+      setIsSharing(false);
     }
-  }, [board, generateShareLink])
+  }, [board, generateShareLink]);
 
   const handleRemoveShare = useCallback(async () => {
-    if (!board) return
-    await removeShareLink({ id: board._id })
-  }, [board, removeShareLink])
+    if (!board) return;
+    await removeShareLink({ id: board._id });
+  }, [board, removeShareLink]);
 
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    )
+    );
   }
 
   if (!isAuthenticated) {
@@ -98,7 +98,7 @@ function BoardDetailPage() {
         </Card>
         <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
       </div>
-    )
+    );
   }
 
   if (board === undefined) {
@@ -106,7 +106,7 @@ function BoardDetailPage() {
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading board...</p>
       </div>
-    )
+    );
   }
 
   if (board === null) {
@@ -121,7 +121,7 @@ function BoardDetailPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // Map Convex goals to local Goal type
@@ -134,18 +134,18 @@ function BoardDetailPage() {
     isStreakGoal: g.isStreakGoal,
     streakTargetDays: g.streakTargetDays,
     streakStartDate: g.streakStartDate,
-  }))
+  }));
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this board?")) {
-      await removeBoard({ id: board._id })
-      navigate({ to: "/boards" })
+      await removeBoard({ id: board._id });
+      navigate({ to: "/boards" });
     }
-  }
+  };
 
   const handleUpdateGoal = async (goalId: string, text: string) => {
-    await updateGoal({ id: goalId as Id<"goals">, text })
-  }
+    await updateGoal({ id: goalId as Id<"goals">, text });
+  };
 
   const handleUpdateStreak = async (
     goalId: string,
@@ -158,60 +158,60 @@ function BoardDetailPage() {
       isStreakGoal,
       streakTargetDays,
       streakStartDate,
-    })
-  }
+    });
+  };
 
   const handleToggleGoal = async (goalId: string) => {
-    await toggleGoal({ id: goalId as Id<"goals"> })
-  }
+    await toggleGoal({ id: goalId as Id<"goals"> });
+  };
 
   const handleResetStreak = async (goalId: string) => {
-    await resetStreak({ id: goalId as Id<"goals"> })
-  }
+    await resetStreak({ id: goalId as Id<"goals"> });
+  };
 
   const handleStartEditName = () => {
-    setEditName(board.name)
-    setIsEditingName(true)
-  }
+    setEditName(board.name);
+    setIsEditingName(true);
+  };
 
   const handleSaveName = async () => {
     if (editName.trim() && editName !== board.name) {
-      await updateBoard({ id: board._id, name: editName.trim() })
+      await updateBoard({ id: board._id, name: editName.trim() });
     }
-    setIsEditingName(false)
-  }
+    setIsEditingName(false);
+  };
 
   const handleRankDifficulty = async () => {
-    const goalsWithText = goals.filter((g) => g.text && !g.isFreeSpace)
+    const goalsWithText = goals.filter((g) => g.text && !g.isFreeSpace);
     if (goalsWithText.length === 0) {
-      setDifficultyRank("Add some goals first to get a difficulty ranking!")
-      return
+      setDifficultyRank("Add some goals first to get a difficulty ranking!");
+      return;
     }
 
-    setIsRanking(true)
-    setDifficultyRank(null)
+    setIsRanking(true);
+    setDifficultyRank(null);
     try {
       const result = await rankDifficultyAction({
         goals: goalsWithText.map((g) => g.text),
-      })
-      const ranking = result.ranking || "Unable to rank at this time."
-      setDifficultyRank(ranking)
+      });
+      const ranking = result.ranking || "Unable to rank at this time.";
+      setDifficultyRank(ranking);
 
       // Extract difficulty level and save to board
-      const difficultyMatch = ranking.match(/\b(Easy|Medium|Hard|Expert)\b/i)
+      const difficultyMatch = ranking.match(/\b(Easy|Medium|Hard|Expert)\b/i);
       if (difficultyMatch) {
         await updateBoard({
           id: board._id,
           difficulty: difficultyMatch[1],
           difficultySummary: ranking,
-        })
+        });
       }
     } catch {
-      setDifficultyRank("Failed to get ranking. Please try again.")
+      setDifficultyRank("Failed to get ranking. Please try again.");
     } finally {
-      setIsRanking(false)
+      setIsRanking(false);
     }
-  }
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
@@ -262,8 +262,8 @@ function BoardDetailPage() {
                 onChange={(e) => setEditName(e.target.value)}
                 onBlur={handleSaveName}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveName()
-                  if (e.key === "Escape") setIsEditingName(false)
+                  if (e.key === "Enter") handleSaveName();
+                  if (e.key === "Escape") setIsEditingName(false);
                 }}
                 className="w-full text-center bg-transparent border-b border-primary focus:outline-none"
                 ref={(el) => el?.focus()}
@@ -331,5 +331,5 @@ function BoardDetailPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
