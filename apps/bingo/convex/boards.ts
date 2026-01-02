@@ -127,6 +127,8 @@ export const removeShareLink = mutation({
 export const getSharedBoard = query({
   args: { shareId: v.string() },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    
     const board = await ctx.db
       .query("boards")
       .withIndex("by_share_id", (q) => q.eq("shareId", args.shareId))
@@ -146,6 +148,7 @@ export const getSharedBoard = query({
       ...board,
       goals,
       ownerName,
+      isOwner: userId ? board.userId === userId : false,
     }
   },
 })
