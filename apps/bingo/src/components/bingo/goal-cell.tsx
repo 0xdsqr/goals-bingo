@@ -45,30 +45,25 @@ export function GoalCell({
     return (
       <div
         className={cn(
-          "aspect-square rounded-lg p-2 flex flex-col items-center justify-center",
+          "w-full h-full rounded-lg p-1 flex flex-col items-center justify-center relative overflow-hidden",
           "border-2 border-primary bg-primary/20",
         )}
       >
-        <span className="text-xs sm:text-sm text-center font-bold text-primary">
-          FREE
-        </span>
-        <span className="absolute bottom-1 right-1 text-primary font-bold">
-          *
-        </span>
+        <span className="text-xs font-bold text-primary">FREE</span>
       </div>
     )
   }
 
   if (isEditing) {
     return (
-      <div className="aspect-square bg-card border-2 border-primary rounded-lg p-2 flex items-center justify-center">
+      <div className="w-full h-full bg-card border-2 border-primary rounded-lg p-1 flex items-center justify-center overflow-hidden">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           ref={(el) => el?.focus()}
-          className="w-full h-full bg-transparent text-center text-sm resize-none focus:outline-none"
+          className="w-full h-full bg-transparent text-center text-xs resize-none focus:outline-none"
           placeholder="Enter goal..."
         />
       </div>
@@ -82,7 +77,7 @@ export function GoalCell({
       role="button"
       tabIndex={readOnly ? -1 : 0}
       className={cn(
-        "aspect-square rounded-lg p-2 flex flex-col items-center justify-center transition-all relative group",
+        "w-full h-full rounded-lg p-1 flex flex-col items-center justify-center transition-all relative group overflow-hidden",
         "border-2",
         !readOnly && "cursor-pointer hover:border-primary/50",
         goal.isCompleted && "bg-green-500/20 border-green-500",
@@ -111,11 +106,11 @@ export function GoalCell({
     >
       <span
         className={cn(
-          "text-xs sm:text-sm text-center break-words line-clamp-4",
+          "text-[10px] sm:text-xs text-center break-words line-clamp-3 leading-tight",
           isEmpty && "text-muted-foreground italic",
         )}
       >
-        {readOnly && isEmpty ? "" : goal.text || "Click to add"}
+        {readOnly && isEmpty ? "" : goal.text || "+"}
       </span>
 
       {!isEmpty && !readOnly && (
@@ -125,14 +120,14 @@ export function GoalCell({
             e.stopPropagation()
             setIsEditing(true)
           }}
-          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs p-1 hover:bg-accent rounded"
+          className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] p-0.5 hover:bg-accent rounded"
         >
           edit
         </button>
       )}
 
       {goal.isCompleted && (
-        <span className="absolute bottom-1 right-1 text-green-500 font-bold">
+        <span className="absolute bottom-0.5 right-0.5 text-green-500 font-bold text-[8px]">
           done
         </span>
       )}

@@ -30,7 +30,7 @@ export function Board({
   ).length
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-md mx-auto">
       {(title || description) && (
         <div className="text-center mb-6">
           {title && <h2 className="text-2xl font-bold">{title}</h2>}
@@ -40,7 +40,7 @@ export function Board({
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-4 mb-4">
+      <div className="flex items-center justify-center gap-4 mb-3">
         <span className="text-sm text-muted-foreground">
           {nonFreeSpaceCompleted}/{nonFreeSpaceCount} completed
         </span>
@@ -51,37 +51,45 @@ export function Board({
         )}
       </div>
 
-      {/* BINGO Header */}
-      <div
-        className={cn("grid gap-1")}
-        style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
-      >
-        {BINGO_LETTERS.map((letter) => (
+      {/* Board Container - fixed aspect ratio */}
+      <div className="w-full aspect-square">
+        <div className="grid grid-rows-[auto_1fr] h-full gap-1">
+          {/* BINGO Header */}
           <div
-            key={letter}
-            className="flex items-center justify-center text-xl sm:text-2xl font-bold text-primary py-1"
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
           >
-            {letter}
+            {BINGO_LETTERS.map((letter) => (
+              <div
+                key={letter}
+                className="flex items-center justify-center text-lg sm:text-xl font-bold text-primary"
+              >
+                {letter}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Board Grid */}
-      <div
-        className={cn("grid gap-1")}
-        style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
-      >
-        {sortedGoals.map((goal) => (
-          <GoalCell
-            key={goal.id}
-            goal={goal}
-            onUpdate={
-              readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)
-            }
-            onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
-            readOnly={readOnly}
-          />
-        ))}
+          {/* Board Grid */}
+          <div
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${size}, 1fr)`,
+              gridTemplateRows: `repeat(${size}, 1fr)`,
+            }}
+          >
+            {sortedGoals.map((goal) => (
+              <GoalCell
+                key={goal.id}
+                goal={goal}
+                onUpdate={
+                  readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)
+                }
+                onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
+                readOnly={readOnly}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
