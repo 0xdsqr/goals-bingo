@@ -5,6 +5,13 @@
   programs.biome = {
     enable = true;
     settings = {
+      files = {
+        ignore = [
+          "**/routeTree.gen.ts"
+          "**/_generated/**"
+          "**/*.css"
+        ];
+      };
       formatter = {
         indentStyle = "space";
         indentWidth = 2;
@@ -13,6 +20,16 @@
         formatter = {
           quoteStyle = "double";
           semicolons = "asNeeded";
+        };
+      };
+      linter = {
+        rules = {
+          suspicious = {
+            noExplicitAny = "off";
+          };
+          a11y = {
+            useSemanticElements = "warn";
+          };
         };
       };
     };
