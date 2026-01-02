@@ -17,7 +17,7 @@ interface SignInDialogProps {
   onSuccess?: () => void
 }
 
-type Step = "choose" | "email" | { email: string }
+type Step = "email" | { email: string }
 
 export function SignInDialog({
   open,
@@ -25,32 +25,18 @@ export function SignInDialog({
   onSuccess,
 }: SignInDialogProps) {
   const { signIn } = useAuthActions()
-  const [step, setStep] = useState<Step>("choose")
+  const [step, setStep] = useState<Step>("email")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const reset = () => {
-    setStep("choose")
+    setStep("email")
     setError(null)
   }
 
   const handleClose = (open: boolean) => {
     if (!open) reset()
     onOpenChange(open)
-  }
-
-  const handleAnonymous = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      await signIn("anonymous")
-      onSuccess?.()
-      handleClose(false)
-    } catch {
-      setError("Failed to sign in")
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,40 +76,14 @@ export function SignInDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {step === "choose" && "Save your board"}
-            {step === "email" && "Sign in with email"}
-            {typeof step === "object" && "Enter code"}
+            {step === "email" ? "Sign in" : "Enter code"}
           </DialogTitle>
           <DialogDescription>
-            {step === "choose" &&
-              "Sign in to save your goals and access them anywhere."}
-            {step === "email" && "We'll send you a verification code."}
-            {typeof step === "object" && `We sent a code to ${step.email}`}
+            {step === "email"
+              ? "Enter your email to save and sync your boards."
+              : `We sent a code to ${step.email}`}
           </DialogDescription>
         </DialogHeader>
-
-        {step === "choose" && (
-          <div className="flex flex-col gap-3 mt-4">
-            <Button onClick={() => setStep("email")}>Sign in with email</Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  or
-                </span>
-              </div>
-            </div>
-            <Button
-              onClick={handleAnonymous}
-              disabled={isLoading}
-              variant="outline"
-            >
-              {isLoading ? "Signing in..." : "Continue as guest"}
-            </Button>
-          </div>
-        )}
 
         {step === "email" && (
           <form
@@ -139,20 +99,12 @@ export function SignInDialog({
                 placeholder="you@example.com"
                 required
                 disabled={isLoading}
+                autoFocus
               />
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setStep("choose")}
-              >
-                Back
-              </Button>
-              <Button type="submit" className="flex-1" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send code"}
-              </Button>
-            </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Sending..." : "Send code"}
+            </Button>
           </form>
         )}
 
@@ -172,12 +124,13 @@ export function SignInDialog({
                 autoComplete="one-time-code"
                 required
                 disabled={isLoading}
+                autoFocus
               />
             </div>
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => setStep("email")}
               >
                 Back

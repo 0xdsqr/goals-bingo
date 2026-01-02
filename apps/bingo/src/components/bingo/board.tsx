@@ -59,56 +59,49 @@ export function Board({
         )}
       </div>
 
-      {/* Board Container - fixed aspect ratio */}
-      <div className="w-full aspect-square">
-        <div className="grid grid-rows-[auto_1fr] h-full gap-1">
-          {/* BINGO Header */}
+      {/* BINGO Header */}
+      <div
+        className="grid gap-1 mb-1"
+        style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
+      >
+        {BINGO_LETTERS.map((letter) => (
           <div
-            className="grid gap-1"
-            style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
+            key={letter}
+            className="flex items-center justify-center text-lg sm:text-xl font-bold text-primary"
           >
-            {BINGO_LETTERS.map((letter) => (
-              <div
-                key={letter}
-                className="flex items-center justify-center text-lg sm:text-xl font-bold text-primary"
-              >
-                {letter}
-              </div>
-            ))}
+            {letter}
           </div>
+        ))}
+      </div>
 
-          {/* Board Grid */}
-          <div
-            className="grid gap-1"
-            style={{
-              gridTemplateColumns: `repeat(${size}, 1fr)`,
-              gridTemplateRows: `repeat(${size}, 1fr)`,
-            }}
-          >
-            {sortedGoals.map((goal) => (
-              <GoalCell
-                key={goal.id}
-                goal={goal}
-                onUpdate={
-                  readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)
-                }
-                onUpdateStreak={
-                  readOnly || !onUpdateStreak
-                    ? undefined
-                    : (isStreak, targetDays, startDate) =>
-                        onUpdateStreak(goal.id, isStreak, targetDays, startDate)
-                }
-                onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
-                onResetStreak={
-                  readOnly || !onResetStreak
-                    ? undefined
-                    : () => onResetStreak(goal.id)
-                }
-                readOnly={readOnly}
-              />
-            ))}
+      {/* Board Grid - use aspect-ratio on each cell */}
+      <div
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
+      >
+        {sortedGoals.map((goal) => (
+          <div key={goal.id} className="aspect-square">
+            <GoalCell
+              goal={goal}
+              onUpdate={
+                readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)
+              }
+              onUpdateStreak={
+                readOnly || !onUpdateStreak
+                  ? undefined
+                  : (isStreak, targetDays, startDate) =>
+                      onUpdateStreak(goal.id, isStreak, targetDays, startDate)
+              }
+              onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
+              onResetStreak={
+                readOnly || !onResetStreak
+                  ? undefined
+                  : () => onResetStreak(goal.id)
+              }
+              readOnly={readOnly}
+            />
           </div>
-        </div>
+        ))}
       </div>
     </div>
   )

@@ -1,10 +1,9 @@
-import { Anonymous } from "@convex-dev/auth/providers/Anonymous"
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server"
 import { query } from "./_generated/server"
 import { ResendOTP } from "./resendOtp"
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Anonymous, ResendOTP],
+  providers: [ResendOTP],
 })
 
 export const loggedInUser = query({
