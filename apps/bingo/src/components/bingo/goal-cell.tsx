@@ -740,7 +740,7 @@ function GoalEditDialog({
                         placeholder="Custom days"
                         onChange={(e) => {
                           const num = parseInt(e.target.value, 10)
-                          if (!isNaN(num) && num >= 1) {
+                          if (!Number.isNaN(num) && num >= 1) {
                             setStreakTargetDays(num)
                           }
                         }}
@@ -803,7 +803,7 @@ function GoalEditDialog({
                         placeholder="Custom number"
                         onChange={(e) => {
                           const num = parseInt(e.target.value, 10)
-                          if (!isNaN(num) && num >= 1) {
+                          if (!Number.isNaN(num) && num >= 1) {
                             setProgressTarget(num)
                           }
                         }}

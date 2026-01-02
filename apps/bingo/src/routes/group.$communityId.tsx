@@ -3,7 +3,6 @@ import { useMutation, useQuery } from "convex/react"
 import { useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Header } from "@/components/layout/header"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {

@@ -826,7 +826,8 @@ function WatchingSection() {
           No boards watched yet
         </p>
         <p className="text-xs text-muted-foreground">
-          Find boards from the public feed and click "Watch" to follow their progress
+          Find boards from the public feed and click "Watch" to follow their
+          progress
         </p>
       </div>
     )
@@ -856,7 +857,8 @@ function WatchingSection() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{board.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    by {board.ownerName} · {board.completedGoals}/{board.totalGoals} goals
+                    by {board.ownerName} · {board.completedGoals}/
+                    {board.totalGoals} goals
                   </p>
                 </div>
               </div>

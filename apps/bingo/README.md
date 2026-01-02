@@ -1,6 +1,14 @@
 # Goals Bingo
 
-Track your yearly goals on a 5x5 bingo board. Complete goals, get BINGO!
+A goal tracking app where you fill out a 5x5 bingo board with your yearly goals. Complete goals, get BINGO!
+
+## Tech Stack
+
+- **Frontend**: TanStack Start, React, Vite, Tailwind CSS
+- **Backend**: Convex (real-time database + serverless functions)
+- **Auth**: Convex Auth (email OTP via Resend)
+- **AI**: OpenRouter (GPT-4o-mini for image extraction, GPT-3.5 for difficulty ranking)
+- **Analytics**: Vercel Analytics
 
 ## Features
 
@@ -10,66 +18,41 @@ Track your yearly goals on a 5x5 bingo board. Complete goals, get BINGO!
 - **Three Goal Types**
   - **One-time** - Simple checkbox goals
   - **Streak** - Track daily habits (30, 60, 90, or custom days)
-    - Visual progress ring shows days completed
-    - Optional custom start date for existing streaks
-    - Reset button if you need to restart
   - **Progress** - Count-based goals (e.g., "Read 12 books")
-    - Shows progress bar + X/Y counter
-    - Increment/decrement buttons
-    - Auto-completes when target reached
 - **Board Sharing** - Generate public links to share your board
-- **User Profiles**
-  - Auto-generated fun usernames (e.g., "CosmicQuest42")
-  - Custom avatar upload
-  - Edit username anytime
+- **User Profiles** - Auto-generated usernames, custom avatars
 - **Community Features**
   - Public feed showing everyone's progress
-  - Auto opt-in on first board (can leave anytime)
   - Private communities with invite links
   - Reactions and comments on events
-  - Avatars and usernames shown in feed
-  - **Watch boards** - Follow other users' boards to track their progress
-    - Click "Watch" on any shared board
-    - See watched boards in the "Watching" tab
-    - Get activity updates from watched boards
+  - Watch other users' boards
 - **AI Features**
-  - Import goals from photo (extracts handwritten/typed goals)
-  - AI difficulty ranking (Easy/Medium/Hard/Expert)
+  - Import goals from photo
+  - AI difficulty ranking
 - **Mobile-friendly** - Responsive layout, native share on mobile
 
-## Potential Features
+## Ideas
 
-### High Priority
+- [ ] Community leaderboard - Most BINGOs, most goals completed, longest streaks
 - [ ] Reminders - Daily notifications for streak goals
 - [ ] Streak grace period - Allow 1 missed day without losing streak
-- [ ] Goal categories - Health, Career, Personal, etc.
 - [ ] Export to image - Share board as PNG/PDF
-
-### Medium Priority
+- [ ] Goal categories - Health, Career, Personal, etc.
 - [ ] Yearly templates - Pre-made boards for common goal themes
 - [ ] Progress analytics - Charts showing completion over time
 - [ ] Achievements/badges - Gamification for milestones
+- [ ] Goal challenges - Community-wide challenges
+- [ ] Accountability partners - Pair up with someone for mutual motivation
 - [ ] Board themes - Custom colors and styles
 - [ ] Goal notes - Add private notes/journal entries to goals
-- [ ] Recurring goals - Goals that reset weekly/monthly
-
-### Community Enhancements
-- [ ] Community leaderboards - Most goals completed, longest streaks
-- [ ] Goal challenges - Community-wide challenges (e.g., "30 day fitness")
-- [ ] Accountability partners - Pair up with someone for mutual motivation
-- [ ] Community goal templates - Share and copy goals from others
-
-### Nice to Have
-- [ ] Dark mode
+- [ ] Dark mode toggle
 - [ ] Offline support with sync
-- [ ] Desktop notifications
-- [ ] iCal/Google Calendar integration for streaks
 
-## Development Setup
+## Development
+
+From the repo root:
 
 ```bash
-bun install
+nix develop
 bun run dev
 ```
-
-Requires Convex backend - see `convex/` directory.

@@ -394,7 +394,7 @@ export const getCommunityFeed = query({
         .filter((e) => memberUserIds.has(e.userId) && !e.voidedAt)
         .slice(0, 30)
         .map(async (event) => {
-          const user = await ctx.db.get(event.userId)
+          const _user = await ctx.db.get(event.userId)
 
           let shareId: string | undefined
           if (event.boardId) {
