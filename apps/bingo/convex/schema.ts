@@ -5,6 +5,17 @@ import { v } from "convex/values"
 export default defineSchema({
   ...authTables,
 
+  // User profiles (extends auth users table)
+  userProfiles: defineTable({
+    userId: v.id("users"),
+    username: v.optional(v.string()), // Display name
+    avatarId: v.optional(v.id("_storage")), // Convex storage ID for avatar
+    bio: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_username", ["username"]),
+
   boards: defineTable({
     userId: v.id("users"),
     name: v.string(),

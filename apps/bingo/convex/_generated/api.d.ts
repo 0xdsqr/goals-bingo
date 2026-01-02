@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as boards from "../boards.js";
 import type * as goals from "../goals.js";
 import type * as http from "../http.js";
+import type * as profile from "../profile.js";
 import type * as resendOtp from "../resendOtp.js";
 import type * as router from "../router.js";
 import type * as social from "../social.js";
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   boards: typeof boards;
   goals: typeof goals;
   http: typeof http;
+  profile: typeof profile;
   resendOtp: typeof resendOtp;
   router: typeof router;
   social: typeof social;

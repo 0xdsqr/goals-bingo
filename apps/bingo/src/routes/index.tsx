@@ -10,6 +10,7 @@ import {
 import { useRef, useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Board } from "@/components/bingo/board"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -186,9 +187,11 @@ function HomePage() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground border-b-2 border-dotted border-primary pb-1">
-          Goals Bingo
-        </h1>
+        <Link to="/">
+          <h1 className="text-2xl font-bold text-foreground border-b-2 border-dotted border-primary pb-1 hover:text-primary transition-colors cursor-pointer">
+            Goals Bingo
+          </h1>
+        </Link>
         <div className="flex items-center gap-2">
           <Authenticated>
             <Link to="/boards">
@@ -196,9 +199,7 @@ function HomePage() {
                 My Boards
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={() => signOut()}>
-              Sign Out
-            </Button>
+            <ProfileMenu onSignOut={() => signOut()} />
           </Authenticated>
           <Unauthenticated>
             <Button size="sm" onClick={() => setShowSignIn(true)}>
@@ -260,9 +261,6 @@ function HomePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-2">
-          <p className="text-xs text-muted-foreground mb-3">
-            Click cell to add goal. Click goal to complete. Center = free space.
-          </p>
           {localBoard && (
             <Board
               goals={localBoard.goals}
@@ -271,6 +269,26 @@ function HomePage() {
               onToggleGoal={toggleGoal}
             />
           )}
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded border-2 border-dashed border-muted-foreground/30 bg-muted/50" />
+              <span>Empty</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded border-2 border-border bg-card" />
+              <span>Goal</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded border-2 border-green-500 bg-green-500/20" />
+              <span>Done</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded border-2 border-primary bg-primary/20" />
+              <span>Free</span>
+            </div>
+          </div>
 
           {/* Save and AI Rank Section */}
           <div className="mt-4 pt-4 border-t border-border">
@@ -351,6 +369,199 @@ function HomePage() {
       />
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
+    </div>
+  )
+}
+
+// Profile menu with avatar
+function ProfileMenu({ onSignOut }: { onSignOut: () => void }) {
+  const profile = useQuery(api.profile.getMyProfile)
+  const updateUsername = useMutation(api.profile.updateUsername)
+  const generateUploadUrl = useMutation(api.profile.generateAvatarUploadUrl)
+  const updateAvatar = useMutation(api.profile.updateAvatar)
+
+  const [showMenu, setShowMenu] = useState(false)
+  const [showEditProfile, setShowEditProfile] = useState(false)
+  const [username, setUsername] = useState("")
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleSaveUsername = async () => {
+    if (!username.trim()) return
+    setIsUpdating(true)
+    setError(null)
+    try {
+      await updateUsername({ username: username.trim() })
+      setShowEditProfile(false)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be less than 5MB")
+      return
+    }
+
+    setIsUpdating(true)
+    setError(null)
+    try {
+      const uploadUrl = await generateUploadUrl()
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+      const { storageId } = await result.json()
+      await updateAvatar({ storageId })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to upload")
+    } finally {
+      setIsUpdating(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setShowMenu(!showMenu)}
+        className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
+      >
+        <Avatar size="sm">
+          {profile?.avatarUrl ? (
+            <AvatarImage src={profile.avatarUrl} alt={profile.username || ""} />
+          ) : null}
+          <AvatarFallback>
+            {profile?.username?.charAt(0).toUpperCase() || "?"}
+          </AvatarFallback>
+        </Avatar>
+      </button>
+
+      {/* Dropdown menu */}
+      {showMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowMenu(false)}
+          />
+          <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+            <div className="px-3 py-2 border-b border-border">
+              <p className="text-sm font-medium truncate">
+                {profile?.username || "Anonymous"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {profile?.email}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername(profile?.username || "")
+                setShowEditProfile(true)
+                setShowMenu(false)
+              }}
+              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+            >
+              Edit Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onSignOut()
+                setShowMenu(false)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-muted transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-3">
+              <Avatar size="xl">
+                {profile?.avatarUrl ? (
+                  <AvatarImage
+                    src={profile.avatarUrl}
+                    alt={profile.username || ""}
+                  />
+                ) : null}
+                <AvatarFallback>
+                  {username?.charAt(0).toUpperCase() ||
+                    profile?.username?.charAt(0).toUpperCase() ||
+                    "?"}
+                </AvatarFallback>
+              </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="sr-only"
+                id="avatar-upload"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Uploading..." : "Change Avatar"}
+              </Button>
+            </div>
+
+            {/* Username */}
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="your-username"
+                maxLength={30}
+              />
+              <p className="text-xs text-muted-foreground">
+                Letters, numbers, _ and - only
+              </p>
+            </div>
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditProfile(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveUsername}
+              disabled={!username.trim() || isUpdating}
+            >
+              {isUpdating ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
