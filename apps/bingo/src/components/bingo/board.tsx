@@ -1,6 +1,5 @@
 import type { Goal } from "@/lib/types";
 import { BINGO_LETTERS, checkBingo } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { GoalCell } from "./goal-cell";
 
 interface BoardProps {

@@ -240,7 +240,11 @@ export function GoalCell({
       >
         {/* Circular progress indicator */}
         <div className="relative w-8 h-8 sm:w-10 sm:h-10 mb-0.5">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+          <svg
+            className="w-full h-full -rotate-90"
+            viewBox="0 0 36 36"
+            aria-label={`Streak progress: ${currentDays} of ${targetDays} days`}
+          >
             <path
               className="text-muted stroke-current"
               strokeWidth="3"
