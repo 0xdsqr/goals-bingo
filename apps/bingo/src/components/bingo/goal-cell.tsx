@@ -116,9 +116,7 @@ export function GoalCell({
   const [streakTargetDays, setStreakTargetDays] = useState(
     goal.streakTargetDays ?? 30,
   )
-  const [progressTarget, setProgressTarget] = useState(
-    goal.progressTarget ?? 5,
-  )
+  const [progressTarget, setProgressTarget] = useState(goal.progressTarget ?? 5)
   const [customStartDate, setCustomStartDate] = useState("")
   const [liveTime, setLiveTime] = useState("")
   const streakProgress = getStreakProgress(goal)
@@ -631,7 +629,11 @@ function GoalEditDialog({
   showGoalTypeOptions: boolean
 }) {
   // Determine which goal type is selected
-  const goalType = isStreakGoal ? "streak" : isProgressGoal ? "progress" : "one-time"
+  const goalType = isStreakGoal
+    ? "streak"
+    : isProgressGoal
+      ? "progress"
+      : "one-time"
 
   const handleTypeChange = (type: "one-time" | "streak" | "progress") => {
     setIsStreakGoal(type === "streak")
@@ -678,7 +680,8 @@ function GoalEditDialog({
                   size="sm"
                   className={cn(
                     "flex-1",
-                    goalType === "streak" && "bg-orange-500 hover:bg-orange-600",
+                    goalType === "streak" &&
+                      "bg-orange-500 hover:bg-orange-600",
                   )}
                   onClick={() => handleTypeChange("streak")}
                 >

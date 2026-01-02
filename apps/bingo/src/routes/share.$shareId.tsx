@@ -1,5 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useQuery } from "convex/react"
+import {
+  Authenticated,
+  Unauthenticated,
+  useMutation,
+  useQuery,
+} from "convex/react"
+import { useState } from "react"
+import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Board } from "@/components/bingo/board"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +20,30 @@ export const Route = createFileRoute("/share/$shareId")({
 function SharedBoardPage() {
   const { shareId } = Route.useParams()
   const board = useQuery(api.boards.getSharedBoard, { shareId })
+  const isWatching = useQuery(
+    api.watched.isWatching,
+    board?._id ? { boardId: board._id } : "skip",
+  )
+  const watchBoard = useMutation(api.watched.watchBoard)
+  const unwatchBoard = useMutation(api.watched.unwatchBoard)
+  const [showSignIn, setShowSignIn] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
+
+  const handleToggleWatch = async () => {
+    if (!board) return
+    setIsToggling(true)
+    try {
+      if (isWatching) {
+        await unwatchBoard({ boardId: board._id })
+      } else {
+        await watchBoard({ boardId: board._id })
+      }
+    } catch (e) {
+      console.error("Failed to toggle watch:", e)
+    } finally {
+      setIsToggling(false)
+    }
+  }
 
   if (board === undefined) {
     return (
@@ -67,11 +98,32 @@ function SharedBoardPage() {
             Goals Bingo
           </h1>
         </Link>
-        <Link to="/">
-          <Button variant="outline" size="sm">
-            Create Your Own
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Authenticated>
+            <Button
+              variant={isWatching ? "default" : "outline"}
+              size="sm"
+              onClick={handleToggleWatch}
+              disabled={isToggling}
+            >
+              {isToggling ? "..." : isWatching ? "Watching" : "Watch"}
+            </Button>
+          </Authenticated>
+          <Unauthenticated>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSignIn(true)}
+            >
+              Watch
+            </Button>
+          </Unauthenticated>
+          <Link to="/">
+            <Button variant="outline" size="sm">
+              Create Your Own
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <Card>
@@ -114,6 +166,8 @@ function SharedBoardPage() {
           </p>
         </CardContent>
       </Card>
+
+      <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
   )
 }

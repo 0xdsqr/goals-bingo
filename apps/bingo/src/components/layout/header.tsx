@@ -1,6 +1,11 @@
 import { useAuthActions } from "@convex-dev/auth/react"
 import { Link } from "@tanstack/react-router"
-import { Authenticated, Unauthenticated, useMutation, useQuery } from "convex/react"
+import {
+  Authenticated,
+  Unauthenticated,
+  useMutation,
+  useQuery,
+} from "convex/react"
 import { useEffect, useRef, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"

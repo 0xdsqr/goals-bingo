@@ -16,6 +16,7 @@ import type * as profile from "../profile.js";
 import type * as resendOtp from "../resendOtp.js";
 import type * as router from "../router.js";
 import type * as social from "../social.js";
+import type * as watched from "../watched.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   resendOtp: typeof resendOtp;
   router: typeof router;
   social: typeof social;
+  watched: typeof watched;
 }>;
 
 /**

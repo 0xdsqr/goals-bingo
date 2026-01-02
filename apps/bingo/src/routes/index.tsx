@@ -576,7 +576,7 @@ function ProfileMenu({ onSignOut }: { onSignOut: () => void }) {
   )
 }
 
-type CommunityTab = "public" | string // "public" or community ID
+type CommunityTab = "public" | "watching" | string // "public", "watching", or community ID
 
 function CommunitySection({
   eventFeedStatus,
@@ -590,6 +590,7 @@ function CommunitySection({
   onSignIn: () => void
 }) {
   const communities = useQuery(api.social.getMyCommunities)
+  const watchedBoards = useQuery(api.watched.getWatchedBoards)
   const [activeTab, setActiveTab] = useState<CommunityTab>("public")
   const [showCreateCommunity, setShowCreateCommunity] = useState(false)
 
@@ -651,6 +652,20 @@ function CommunitySection({
                 }`}
               >
                 Public
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("watching")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  activeTab === "watching"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Watching
+                {watchedBoards && watchedBoards.length > 0
+                  ? ` (${watchedBoards.length})`
+                  : ""}
               </button>
               {communities?.map((community) => (
                 <button
@@ -753,6 +768,8 @@ function CommunitySection({
                 </div>
               )}
             </div>
+          ) : activeTab === "watching" ? (
+            <WatchingSection />
           ) : (
             <CommunityFeedInline communityId={activeTab as Id<"communities">} />
           )}
@@ -768,8 +785,120 @@ function CommunitySection({
   )
 }
 
+// Watching section - shows watched boards and their activity
+function WatchingSection() {
+  const watchedBoards = useQuery(api.watched.getWatchedBoards)
+  const watchedFeed = useQuery(api.watched.getWatchedFeed)
+  const unwatchBoard = useMutation(api.watched.unwatchBoard)
+
+  if (watchedBoards === undefined) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (watchedBoards.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+          <svg
+            className="w-6 h-6 text-muted-foreground"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+        </div>
+        <p className="text-sm text-muted-foreground mb-2">
+          No boards watched yet
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Find boards from the public feed and click "Watch" to follow their progress
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Watched boards list */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Boards you're watching
+        </p>
+        {watchedBoards.map((board) => (
+          <div
+            key={board._id}
+            className="flex items-center justify-between p-2 rounded-lg border border-border bg-card"
+          >
+            <Link
+              to="/share/$shareId"
+              params={{ shareId: board.shareId || "" }}
+              className="flex-1 min-w-0"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
+                  {board.completionPercent}%
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{board.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    by {board.ownerName} · {board.completedGoals}/{board.totalGoals} goals
+                  </p>
+                </div>
+              </div>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground shrink-0"
+              onClick={() => unwatchBoard({ boardId: board._id })}
+            >
+              Unwatch
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity feed from watched boards */}
+      {watchedFeed && watchedFeed.length > 0 && (
+        <div className="space-y-2 pt-2 border-t border-border">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Recent activity
+          </p>
+          <div className="space-y-3">
+            {watchedFeed.map((event) => (
+              <EventFeedItemComponent
+                key={event._id}
+                event={event as EventFeedItem}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Inline community feed for tabs
-function CommunityFeedInline({ communityId }: { communityId: Id<"communities"> }) {
+function CommunityFeedInline({
+  communityId,
+}: {
+  communityId: Id<"communities">
+}) {
   const feed = useQuery(api.social.getCommunityFeed, { communityId })
   const community = useQuery(api.social.getCommunity, { communityId })
 
@@ -789,7 +918,9 @@ function CommunityFeedInline({ communityId }: { communityId: Id<"communities"> }
           <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs">
             {community.name.charAt(0).toUpperCase()}
           </div>
-          <span className="text-sm font-medium">{community.memberCount} members</span>
+          <span className="text-sm font-medium">
+            {community.memberCount} members
+          </span>
         </div>
         <Link to="/group/$communityId" params={{ communityId }}>
           <Button variant="outline" size="sm" className="h-7 text-xs">
@@ -890,7 +1021,13 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
     return `${days}d`
   }
 
-  const BoardLink = ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  const BoardLink = ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode
+    className?: string
+  }) => {
     if (event.shareId) {
       return (
         <Link

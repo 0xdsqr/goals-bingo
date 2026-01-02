@@ -1,16 +1,19 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
 import type { Id } from "./_generated/dataModel"
-import { mutation, query, type QueryCtx } from "./_generated/server"
+import { mutation, type QueryCtx, query } from "./_generated/server"
 
 // Helper to get display name for a user (prefers profile username, never exposes email)
-async function getDisplayName(ctx: QueryCtx, userId: Id<"users">): Promise<string> {
+async function getDisplayName(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+): Promise<string> {
   const profile = await ctx.db
     .query("userProfiles")
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .first()
   if (profile?.username) return profile.username
-  
+
   const user = await ctx.db.get(userId)
   return user?.name || "Anonymous"
 }

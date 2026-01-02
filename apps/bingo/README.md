@@ -28,6 +28,10 @@ Track your yearly goals on a 5x5 bingo board. Complete goals, get BINGO!
   - Private communities with invite links
   - Reactions and comments on events
   - Avatars and usernames shown in feed
+  - **Watch boards** - Follow other users' boards to track their progress
+    - Click "Watch" on any shared board
+    - See watched boards in the "Watching" tab
+    - Get activity updates from watched boards
 - **AI Features**
   - Import goals from photo (extracts handwritten/typed goals)
   - AI difficulty ranking (Easy/Medium/Hard/Expert)

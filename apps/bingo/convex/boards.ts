@@ -3,16 +3,25 @@ import { v } from "convex/values"
 import OpenAI from "openai"
 import { internal } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
-import { action, internalMutation, mutation, query, type QueryCtx } from "./_generated/server"
+import {
+  action,
+  internalMutation,
+  mutation,
+  type QueryCtx,
+  query,
+} from "./_generated/server"
 
 // Helper to get display name for a user (prefers profile username, never exposes email)
-async function getDisplayName(ctx: QueryCtx, userId: Id<"users">): Promise<string> {
+async function getDisplayName(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+): Promise<string> {
   const profile = await ctx.db
     .query("userProfiles")
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .first()
   if (profile?.username) return profile.username
-  
+
   const user = await ctx.db.get(userId)
   return user?.name || "Anonymous"
 }
@@ -313,7 +322,7 @@ export const create = mutation({
         .first()
       const user = await ctx.db.get(userId)
       const displayName = profile?.username || user?.name || "Someone"
-      
+
       await ctx.db.insert("eventFeed", {
         userId,
         eventType: "user_joined",
@@ -421,7 +430,7 @@ export const toggleEventFeedOptIn = mutation({
         .first()
       const user = await ctx.db.get(userId)
       const displayName = profile?.username || user?.name || "Someone"
-      
+
       await ctx.db.insert("eventFeed", {
         userId,
         eventType: "user_joined",

@@ -261,7 +261,9 @@ export const ensureProfile = mutation({
     while (attempts < 10) {
       const taken = await ctx.db
         .query("userProfiles")
-        .withIndex("by_username", (q) => q.eq("username", username.toLowerCase()))
+        .withIndex("by_username", (q) =>
+          q.eq("username", username.toLowerCase()),
+        )
         .first()
       if (!taken) break
       username = generateRandomUsername()

@@ -86,7 +86,7 @@ function CommunityPage() {
 
   const handleShareInvite = async () => {
     const inviteUrl = `${window.location.origin}/join/${community.inviteCode}`
-    
+
     // Use native share on mobile if available
     if (navigator.share) {
       try {
@@ -101,7 +101,7 @@ function CommunityPage() {
         if ((e as Error).name === "AbortError") return
       }
     }
-    
+
     // Fallback to clipboard
     await navigator.clipboard.writeText(inviteUrl)
     setCopied(true)
@@ -159,11 +159,7 @@ function CommunityPage() {
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShareInvite}
-          >
+          <Button variant="outline" size="sm" onClick={handleShareInvite}>
             {copied ? "Copied!" : "Invite"}
           </Button>
           <Button
@@ -313,7 +309,13 @@ function EventCard({ event }: { event: EventFeedItem }) {
     return `${days}d`
   }
 
-  const BoardLink = ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  const BoardLink = ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode
+    className?: string
+  }) => {
     if (event.shareId) {
       return (
         <Link

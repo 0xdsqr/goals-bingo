@@ -123,4 +123,14 @@ export default defineSchema({
   })
     .index("by_community", ["communityId"])
     .index("by_user", ["userId"]),
+
+  // Watched boards - track other users' boards you want to follow
+  watchedBoards: defineTable({
+    userId: v.id("users"), // The user doing the watching
+    boardId: v.id("boards"), // The board being watched
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_board", ["boardId"])
+    .index("by_user_board", ["userId", "boardId"]),
 })

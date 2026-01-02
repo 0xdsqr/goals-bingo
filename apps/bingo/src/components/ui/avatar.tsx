@@ -31,7 +31,9 @@ interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {}
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
   ({ className, alt, src, ...props }, ref) => {
-    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">("loading")
+    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
+      "loading",
+    )
 
     // Reset status when src changes
     React.useEffect(() => {
