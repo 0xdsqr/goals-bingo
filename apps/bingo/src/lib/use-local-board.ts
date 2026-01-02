@@ -31,7 +31,7 @@ const getStoredBoard = (): DraftBoard => {
     // Migrate old boards without free space
     if (!parsed.goals.some((g) => g.isFreeSpace)) {
       const centerPosition = Math.floor((parsed.size * parsed.size) / 2)
-      parsed.goals = parsed.goals.map((g, i) => ({
+      parsed.goals = parsed.goals.map((g) => ({
         ...g,
         isFreeSpace: g.position === centerPosition,
         isCompleted: g.position === centerPosition ? true : g.isCompleted,
@@ -53,11 +53,6 @@ export const useLocalBoard = () => {
     const stored = getStoredBoard()
     setBoard(stored)
     setIsLoaded(true)
-  }, [])
-
-  const save = useCallback((newBoard: DraftBoard) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newBoard))
-    setBoard(newBoard)
   }, [])
 
   const updateBoardName = useCallback((name: string) => {

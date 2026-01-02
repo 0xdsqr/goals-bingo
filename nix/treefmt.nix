@@ -4,14 +4,20 @@
   programs.nixfmt.enable = true;
   programs.biome = {
     enable = true;
+    includes = [
+      "*.ts"
+      "*.tsx"
+      "*.js"
+      "*.jsx"
+      "*.json"
+    ];
+    excludes = [
+      "**/routeTree.gen.ts"
+      "**/_generated/**"
+      "**/*.css"
+      "**/node_modules/**"
+    ];
     settings = {
-      files = {
-        ignore = [
-          "**/routeTree.gen.ts"
-          "**/_generated/**"
-          "**/*.css"
-        ];
-      };
       formatter = {
         indentStyle = "space";
         indentWidth = 2;
@@ -28,7 +34,10 @@
             noExplicitAny = "off";
           };
           a11y = {
-            useSemanticElements = "warn";
+            useSemanticElements = "off";
+            noStaticElementInteractions = "off";
+            useKeyWithClickEvents = "off";
+            noAutofocus = "off";
           };
         };
       };

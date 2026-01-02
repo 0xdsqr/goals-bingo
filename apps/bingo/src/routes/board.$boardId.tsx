@@ -1,9 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useConvexAuth, useMutation, useQuery } from "convex/react"
 import { useCallback, useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
@@ -248,6 +243,7 @@ function BoardDetailPage() {
                       </span>
                       {!isEmpty && (
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleStartEdit(goal._id, goal.text)

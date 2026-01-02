@@ -4,7 +4,6 @@ import {
   Authenticated,
   Unauthenticated,
   useAction,
-  useConvexAuth,
   useMutation,
   useQuery,
 } from "convex/react"
@@ -95,7 +94,7 @@ function HomePage() {
         goals: goalsWithText.map((g) => g.text),
       })
       setDifficultyRank(result.ranking || "Unable to rank at this time.")
-    } catch (error) {
+    } catch {
       setDifficultyRank("Failed to get ranking. Please try again.")
     } finally {
       setIsRanking(false)
