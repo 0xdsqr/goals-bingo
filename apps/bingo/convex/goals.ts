@@ -3,6 +3,38 @@ import { v } from "convex/values"
 import { internal } from "./_generated/api"
 import { mutation } from "./_generated/server"
 
+// Check if goals form a BINGO (row, column, or diagonal)
+function checkBingo(
+  goals: Array<{ position: number; isCompleted: boolean }>,
+  size: number,
+): boolean {
+  const completed = new Set(
+    goals.filter((g) => g.isCompleted).map((g) => g.position),
+  )
+
+  const indices = Array.from({ length: size }, (_, i) => i)
+
+  // Check rows
+  const hasRowBingo = indices.some((row) =>
+    indices.every((col) => completed.has(row * size + col)),
+  )
+  if (hasRowBingo) return true
+
+  // Check columns
+  const hasColBingo = indices.some((col) =>
+    indices.every((row) => completed.has(row * size + col)),
+  )
+  if (hasColBingo) return true
+
+  // Check diagonals
+  const hasDiag1 = indices.every((i) => completed.has(i * size + i))
+  const hasDiag2 = indices.every((i) =>
+    completed.has(i * size + (size - 1 - i)),
+  )
+
+  return hasDiag1 || hasDiag2
+}
+
 export const update = mutation({
   args: {
     id: v.id("goals"),
@@ -22,10 +54,10 @@ export const update = mutation({
     const wasCompleted = goal.isCompleted
 
     // If enabling streak goal, set start date to now if not provided
-    const streakStartDate =
-      args.isStreakGoal && !goal.isStreakGoal
-        ? (args.streakStartDate ?? now)
-        : args.streakStartDate
+    const isNewStreakGoal = args.isStreakGoal && !goal.isStreakGoal
+    const streakStartDate = isNewStreakGoal
+      ? (args.streakStartDate ?? now)
+      : args.streakStartDate
 
     await ctx.db.patch(args.id, {
       ...(args.text !== undefined && { text: args.text }),
@@ -47,15 +79,23 @@ export const update = mutation({
     if (args.isCompleted && !wasCompleted) {
       const board = await ctx.db.get(goal.boardId)
       if (board) {
-        // Check if all goals are now completed
+        // Get all goals to check for bingo/completion
         const allGoals = await ctx.db
           .query("goals")
           .withIndex("by_board", (q) => q.eq("boardId", goal.boardId))
           .collect()
 
-        const allCompleted = allGoals.every((g) =>
-          g._id === args.id ? true : g.isCompleted,
+        // Update the current goal's status for checks
+        const goalsWithUpdate = allGoals.map((g) =>
+          g._id === args.id ? { ...g, isCompleted: true } : g,
         )
+
+        const allCompleted = goalsWithUpdate.every((g) => g.isCompleted)
+
+        // Check for new BINGO (wasn't bingo before, is now)
+        const wasBingo = checkBingo(allGoals, board.size)
+        const isBingo = checkBingo(goalsWithUpdate, board.size)
+        const gotNewBingo = !wasBingo && isBingo
 
         if (allCompleted) {
           await ctx.scheduler.runAfter(
@@ -64,6 +104,19 @@ export const update = mutation({
             {
               userId,
               eventType: "board_completed",
+              boardId: goal.boardId,
+              goalId: args.id,
+              boardName: board.name,
+            },
+          )
+        } else if (gotNewBingo) {
+          // BINGO! They got a line
+          await ctx.scheduler.runAfter(
+            0,
+            internal.boards.createEventFeedEntry,
+            {
+              userId,
+              eventType: "bingo",
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
@@ -91,6 +144,24 @@ export const update = mutation({
         goalId: args.id,
       })
     }
+
+    // Emit streak_started event when enabling a streak goal
+    if (isNewStreakGoal) {
+      const board = await ctx.db.get(goal.boardId)
+      if (board) {
+        await ctx.scheduler.runAfter(0, internal.boards.createEventFeedEntry, {
+          userId,
+          eventType: "streak_started",
+          boardId: goal.boardId,
+          goalId: args.id,
+          boardName: board.name,
+          goalText: args.text || goal.text,
+          metadata: JSON.stringify({
+            targetDays: args.streakTargetDays || goal.streakTargetDays,
+          }),
+        })
+      }
+    }
   },
 })
 
@@ -103,13 +174,32 @@ export const resetStreak = mutation({
     if (!goal || goal.userId !== userId) throw new Error("Goal not found")
     if (!goal.isStreakGoal) throw new Error("Not a streak goal")
 
+    // Calculate how many days the streak was before reset
     const now = Date.now()
+    const previousDays = goal.streakStartDate
+      ? Math.floor((now - goal.streakStartDate) / (1000 * 60 * 60 * 24))
+      : 0
+
     await ctx.db.patch(args.id, {
       streakStartDate: now,
       isCompleted: false,
       completedAt: undefined,
       updatedAt: now,
     })
+
+    // Emit streak_reset event (the shame!)
+    const board = await ctx.db.get(goal.boardId)
+    if (board) {
+      await ctx.scheduler.runAfter(0, internal.boards.createEventFeedEntry, {
+        userId,
+        eventType: "streak_reset",
+        boardId: goal.boardId,
+        goalId: args.id,
+        boardName: board.name,
+        goalText: goal.text,
+        metadata: JSON.stringify({ previousDays }),
+      })
+    }
   },
 })
 
@@ -133,15 +223,23 @@ export const toggleComplete = mutation({
     if (isCompleted) {
       const board = await ctx.db.get(goal.boardId)
       if (board) {
-        // Check if all goals are now completed
+        // Get all goals to check for bingo/completion
         const allGoals = await ctx.db
           .query("goals")
           .withIndex("by_board", (q) => q.eq("boardId", goal.boardId))
           .collect()
 
-        const allCompleted = allGoals.every((g) =>
-          g._id === args.id ? true : g.isCompleted,
+        // Update the current goal's status for checks
+        const goalsWithUpdate = allGoals.map((g) =>
+          g._id === args.id ? { ...g, isCompleted: true } : g,
         )
+
+        const allCompleted = goalsWithUpdate.every((g) => g.isCompleted)
+
+        // Check for new BINGO
+        const wasBingo = checkBingo(allGoals, board.size)
+        const isBingo = checkBingo(goalsWithUpdate, board.size)
+        const gotNewBingo = !wasBingo && isBingo
 
         if (allCompleted) {
           await ctx.scheduler.runAfter(
@@ -150,6 +248,18 @@ export const toggleComplete = mutation({
             {
               userId,
               eventType: "board_completed",
+              boardId: goal.boardId,
+              goalId: args.id,
+              boardName: board.name,
+            },
+          )
+        } else if (gotNewBingo) {
+          await ctx.scheduler.runAfter(
+            0,
+            internal.boards.createEventFeedEntry,
+            {
+              userId,
+              eventType: "bingo",
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,

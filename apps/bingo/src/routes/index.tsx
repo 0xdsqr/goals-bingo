@@ -15,16 +15,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useLocalBoard } from "@/lib/use-local-board"
 import { api } from "../../convex/_generated/api"
+import type { Id } from "../../convex/_generated/dataModel"
 
 type EventFeedItem = {
   _id: string
   userId: string
-  eventType: "board_created" | "goal_completed" | "board_completed"
+  eventType:
+    | "board_created"
+    | "goal_completed"
+    | "board_completed"
+    | "streak_started"
+    | "streak_reset"
+    | "streak_milestone"
+    | "bingo"
   boardId?: string
   boardName: string
+  goalText?: string
+  metadata?: string
   createdAt: number
   userName?: string
   shareId?: string
+  upCount: number
+  downCount: number
+  userReaction?: "up" | "down"
+  commentCount: number
 }
 
 export const Route = createFileRoute("/")({
@@ -384,6 +398,9 @@ function HomePage() {
 }
 
 function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
+  const toggleReaction = useMutation(api.social.toggleReaction)
+  const [showComments, setShowComments] = useState(false)
+
   const getTimeAgo = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
     if (seconds < 60) return "now"
@@ -411,6 +428,7 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
   }
 
   const getEventMessage = () => {
+    const metadata = event.metadata ? JSON.parse(event.metadata) : {}
     switch (event.eventType) {
       case "board_created":
         return <>created {getBoardNameElement()}</>
@@ -418,25 +436,163 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         return <>completed a goal</>
       case "board_completed":
         return <>finished {getBoardNameElement()}!</>
+      case "streak_started":
+        return (
+          <>
+            started a {metadata.targetDays}-day streak:{" "}
+            <span className="text-orange-500">{event.goalText}</span>
+          </>
+        )
+      case "streak_reset":
+        return (
+          <>
+            reset their streak after {metadata.previousDays} days:{" "}
+            <span className="text-red-400">{event.goalText}</span>
+          </>
+        )
+      case "streak_milestone":
+        return (
+          <>
+            hit {metadata.days} days on{" "}
+            <span className="text-green-500">{event.goalText}</span>!
+          </>
+        )
+      case "bingo":
+        return (
+          <>
+            got <span className="text-primary font-bold">BINGO!</span> on{" "}
+            {getBoardNameElement()}
+          </>
+        )
       default:
         return <>did something</>
     }
   }
 
+  const handleReaction = async (type: "up" | "down") => {
+    await toggleReaction({ eventId: event._id as Id<"eventFeed">, type })
+  }
+
   return (
-    <div className="flex items-center gap-2 p-2 rounded bg-muted/50">
-      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs">
-        {event.userName?.charAt(0).toUpperCase() || "?"}
+    <div className="p-2 rounded bg-muted/50 space-y-2">
+      {/* Main event row */}
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
+          {event.userName?.charAt(0).toUpperCase() || "?"}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs">
+            <span className="font-medium">{event.userName || "Someone"}</span>{" "}
+            {getEventMessage()}
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground shrink-0">
+          {getTimeAgo(event.createdAt)}
+        </span>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs truncate">
-          <span className="font-medium">{event.userName || "Someone"}</span>{" "}
-          {getEventMessage()}
-        </p>
+
+      {/* Reactions and comments row */}
+      <div className="flex items-center gap-3 pl-8 text-xs">
+        <button
+          type="button"
+          onClick={() => handleReaction("up")}
+          className={`flex items-center gap-1 hover:text-green-500 transition-colors ${
+            event.userReaction === "up"
+              ? "text-green-500"
+              : "text-muted-foreground"
+          }`}
+        >
+          <span>👍</span>
+          {event.upCount > 0 && <span>{event.upCount}</span>}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleReaction("down")}
+          className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
+            event.userReaction === "down"
+              ? "text-red-500"
+              : "text-muted-foreground"
+          }`}
+        >
+          <span>👎</span>
+          {event.downCount > 0 && <span>{event.downCount}</span>}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowComments(!showComments)}
+          className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+        >
+          <span>💬</span>
+          {event.commentCount > 0 && <span>{event.commentCount}</span>}
+        </button>
       </div>
-      <span className="text-xs text-muted-foreground shrink-0">
-        {getTimeAgo(event.createdAt)}
-      </span>
+
+      {/* Comments section */}
+      {showComments && <EventComments eventId={event._id as Id<"eventFeed">} />}
+    </div>
+  )
+}
+
+function EventComments({ eventId }: { eventId: Id<"eventFeed"> }) {
+  const comments = useQuery(api.social.getComments, { eventId })
+  const addComment = useMutation(api.social.addComment)
+  const deleteComment = useMutation(api.social.deleteComment)
+  const [newComment, setNewComment] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newComment.trim()) return
+    setIsSubmitting(true)
+    try {
+      await addComment({ eventId, text: newComment.trim() })
+      setNewComment("")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (commentId: Id<"comments">) => {
+    if (confirm("Delete this comment?")) {
+      await deleteComment({ commentId })
+    }
+  }
+
+  return (
+    <div className="pl-8 space-y-2">
+      {/* Comment list */}
+      {comments?.map((comment) => (
+        <div key={comment._id} className="flex items-start gap-2 text-xs">
+          <span className="font-medium shrink-0">{comment.userName}:</span>
+          <span className="flex-1 text-muted-foreground">{comment.text}</span>
+          <button
+            type="button"
+            onClick={() => handleDelete(comment._id)}
+            className="text-muted-foreground hover:text-destructive text-[10px]"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+
+      {/* Add comment form */}
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <input
+          type="text"
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="Add a comment..."
+          className="flex-1 text-xs bg-background border rounded px-2 py-1"
+          maxLength={500}
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting || !newComment.trim()}
+          className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded disabled:opacity-50"
+        >
+          Post
+        </button>
+      </form>
     </div>
   )
 }

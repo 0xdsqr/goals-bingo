@@ -419,10 +419,30 @@ export const getEventFeed = query({
           shareId = board?.shareId
         }
 
+        // Get reaction counts
+        const reactions = await ctx.db
+          .query("reactions")
+          .withIndex("by_event", (q) => q.eq("eventId", event._id))
+          .collect()
+        const upCount = reactions.filter((r) => r.type === "up").length
+        const downCount = reactions.filter((r) => r.type === "down").length
+        const userReaction = reactions.find((r) => r.userId === userId)?.type
+
+        // Get comment count
+        const comments = await ctx.db
+          .query("comments")
+          .withIndex("by_event", (q) => q.eq("eventId", event._id))
+          .collect()
+        const commentCount = comments.length
+
         return {
           ...event,
           userName: user?.name || user?.email || "Anonymous",
           shareId,
+          upCount,
+          downCount,
+          userReaction,
+          commentCount,
         }
       }),
     )
@@ -440,10 +460,16 @@ export const createEventFeedEntry = internalMutation({
       v.literal("board_created"),
       v.literal("goal_completed"),
       v.literal("board_completed"),
+      v.literal("streak_started"),
+      v.literal("streak_reset"),
+      v.literal("streak_milestone"),
+      v.literal("bingo"),
     ),
     boardId: v.optional(v.id("boards")),
     goalId: v.optional(v.id("goals")),
     boardName: v.string(),
+    goalText: v.optional(v.string()),
+    metadata: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Only create event if user is opted in
@@ -460,6 +486,8 @@ export const createEventFeedEntry = internalMutation({
       boardId: args.boardId,
       goalId: args.goalId,
       boardName: args.boardName,
+      goalText: args.goalText,
+      metadata: args.metadata,
       createdAt: Date.now(),
     })
   },

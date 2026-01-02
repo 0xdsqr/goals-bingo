@@ -52,13 +52,58 @@ export default defineSchema({
       v.literal("board_created"),
       v.literal("goal_completed"),
       v.literal("board_completed"),
+      v.literal("streak_started"),
+      v.literal("streak_reset"),
+      v.literal("streak_milestone"), // 7d, 30d, 60d, 90d milestones
+      v.literal("bingo"), // Got a BINGO line!
     ),
     boardId: v.optional(v.id("boards")),
-    goalId: v.optional(v.id("goals")), // Track which goal for undo support
+    goalId: v.optional(v.id("goals")),
     boardName: v.string(),
+    goalText: v.optional(v.string()), // For streak events, show which goal
+    metadata: v.optional(v.string()), // JSON for extra data (e.g., milestone days)
+    communityId: v.optional(v.id("communities")), // null = public feed
     createdAt: v.number(),
-    voidedAt: v.optional(v.number()), // Set when goal is uncompleted
+    voidedAt: v.optional(v.number()),
   })
     .index("by_created", ["createdAt"])
-    .index("by_goal", ["goalId"]),
+    .index("by_goal", ["goalId"])
+    .index("by_community", ["communityId", "createdAt"]),
+
+  // Reactions on events (thumbs up/down)
+  reactions: defineTable({
+    eventId: v.id("eventFeed"),
+    userId: v.id("users"),
+    type: v.union(v.literal("up"), v.literal("down")),
+    createdAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_user_event", ["userId", "eventId"]),
+
+  // Comments on events
+  comments: defineTable({
+    eventId: v.id("eventFeed"),
+    userId: v.id("users"),
+    text: v.string(),
+    createdAt: v.number(),
+  }).index("by_event", ["eventId"]),
+
+  // Private communities (for future use)
+  communities: defineTable({
+    name: v.string(),
+    ownerId: v.id("users"),
+    inviteCode: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_invite", ["inviteCode"]),
+
+  // Community membership (for future use)
+  communityMembers: defineTable({
+    communityId: v.id("communities"),
+    userId: v.id("users"),
+    joinedAt: v.number(),
+  })
+    .index("by_community", ["communityId"])
+    .index("by_user", ["userId"]),
 })
