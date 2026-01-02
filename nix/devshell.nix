@@ -30,41 +30,11 @@ in
         eval "$(starship init bash)"
       fi
 
-      # Load .env files if they exist
-      if [[ -f apps/bingo/.env ]]; then
-        set -a
-        source apps/bingo/.env
-        set +a
-      fi
-      if [[ -f apps/bingo/.env.local ]]; then
-        set -a
-        source apps/bingo/.env.local
-        set +a
-      fi
-
       echo "Bun version: $(bun --version)"
-      echo "🚀 Development shell activated"
-      echo ""
-      echo "Commands:"
-      echo "  dev        - Start UI + Convex backend"
-      echo "  dev:ui     - Start UI only"
-      echo "  dev:convex - Start Convex only"
+      echo "🚀 Development shell activated, you can now compile things"
 
-      dev() {
-        echo "Starting Convex and UI..."
-        bun run --filter @goals-bingo/bingo dev:convex &
-        CONVEX_PID=$!
-        sleep 2
-        bun run --filter @goals-bingo/bingo dev
-        kill $CONVEX_PID 2>/dev/null
-      }
-
-      dev:ui() {
-        bun run --filter @goals-bingo/bingo dev
-      }
-
-      dev:convex() {
-        bun run --filter @goals-bingo/bingo dev:convex
+      scaffold() {
+        bun run scaffold "$@"
       }
     '';
 
