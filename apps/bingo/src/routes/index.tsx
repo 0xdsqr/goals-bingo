@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLocalBoard } from "@/lib/use-local-board"
+import { cn } from "@/lib/utils"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 
@@ -889,19 +890,20 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
     return `${days}d`
   }
 
-  const getBoardNameElement = () => {
+  const BoardLink = ({ children, className }: { children: React.ReactNode; className?: string }) => {
     if (event.shareId) {
       return (
         <Link
           to="/share/$shareId"
           params={{ shareId: event.shareId }}
-          className="text-primary hover:underline"
+          className={cn(className, "hover:underline cursor-pointer")}
+          onClick={(e) => e.stopPropagation()}
         >
-          {event.boardName}
+          {children}
         </Link>
       )
     }
-    return <span>"{event.boardName}"</span>
+    return <span className={className}>{children}</span>
   }
 
   const getEventMessage = () => {
@@ -911,27 +913,27 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         return (
           <>
             created{" "}
-            <span className="border-b-2 border-dotted border-blue-500 text-blue-500 font-medium">
+            <BoardLink className="border-b-2 border-dotted border-blue-500 text-blue-500 font-medium">
               {event.boardName}
-            </span>
+            </BoardLink>
           </>
         )
       case "goal_completed":
         return (
           <>
             completed{" "}
-            <span className="border-b-2 border-dotted border-green-500 text-green-500 font-medium">
+            <BoardLink className="border-b-2 border-dotted border-green-500 text-green-500 font-medium">
               {event.goalText || "a goal"}
-            </span>
+            </BoardLink>
           </>
         )
       case "board_completed":
         return (
           <>
             finished{" "}
-            <span className="border-b-2 border-dotted border-yellow-500 text-yellow-500 font-medium">
+            <BoardLink className="border-b-2 border-dotted border-yellow-500 text-yellow-500 font-medium">
               {event.boardName}
-            </span>
+            </BoardLink>
             !
           </>
         )
@@ -939,9 +941,9 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         return (
           <>
             started a{" "}
-            <span className="border-b-2 border-dotted border-orange-500 text-orange-500 font-medium">
+            <BoardLink className="border-b-2 border-dotted border-orange-500 text-orange-500 font-medium">
               {metadata.targetDays}-day streak
-            </span>
+            </BoardLink>
             : {event.goalText}
           </>
         )
@@ -969,9 +971,9 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         return (
           <>
             got{" "}
-            <span className="border-b-2 border-dotted border-purple-500 text-purple-500 font-bold">
+            <BoardLink className="border-b-2 border-dotted border-purple-500 text-purple-500 font-bold">
               BINGO!
-            </span>{" "}
+            </BoardLink>{" "}
             on {event.boardName}
           </>
         )
@@ -988,9 +990,9 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         return (
           <>
             made progress on{" "}
-            <span className="border-b-2 border-dotted border-blue-500 text-blue-500 font-medium">
+            <BoardLink className="border-b-2 border-dotted border-blue-500 text-blue-500 font-medium">
               {event.goalText || "a goal"}
-            </span>
+            </BoardLink>
           </>
         )
       default:
