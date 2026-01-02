@@ -7,7 +7,7 @@ import {
   useMutation,
   useQuery,
 } from "convex/react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Board } from "@/components/bingo/board"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -376,6 +376,7 @@ function HomePage() {
 // Profile menu with avatar
 function ProfileMenu({ onSignOut }: { onSignOut: () => void }) {
   const profile = useQuery(api.profile.getMyProfile)
+  const ensureProfile = useMutation(api.profile.ensureProfile)
   const updateUsername = useMutation(api.profile.updateUsername)
   const generateUploadUrl = useMutation(api.profile.generateAvatarUploadUrl)
   const updateAvatar = useMutation(api.profile.updateAvatar)
@@ -386,6 +387,13 @@ function ProfileMenu({ onSignOut }: { onSignOut: () => void }) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-create profile with random username if needed
+  useEffect(() => {
+    if (profile?.needsProfile) {
+      ensureProfile()
+    }
+  }, [profile?.needsProfile, ensureProfile])
 
   const handleSaveUsername = async () => {
     if (!username.trim()) return
@@ -611,7 +619,7 @@ function CommunitySection({
                       d="M12 4v16m8-8H4"
                     />
                   </svg>
-                  New Group
+                  New Community
                 </Button>
                 <Button
                   variant="ghost"

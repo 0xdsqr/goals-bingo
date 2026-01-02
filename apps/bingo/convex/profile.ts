@@ -2,7 +2,72 @@ import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 
-// Get current user's profile
+// Word lists for random username generation
+const adjectives = [
+  "cosmic",
+  "stellar",
+  "bright",
+  "swift",
+  "bold",
+  "epic",
+  "zen",
+  "wild",
+  "calm",
+  "brave",
+  "clever",
+  "daring",
+  "eager",
+  "fierce",
+  "gentle",
+  "happy",
+  "keen",
+  "lively",
+  "merry",
+  "noble",
+  "proud",
+  "quick",
+  "radiant",
+  "serene",
+  "vivid",
+]
+
+const nouns = [
+  "quest",
+  "spark",
+  "dream",
+  "flame",
+  "star",
+  "wave",
+  "peak",
+  "path",
+  "goal",
+  "rise",
+  "bloom",
+  "dash",
+  "flash",
+  "glow",
+  "jump",
+  "leap",
+  "pulse",
+  "rush",
+  "shine",
+  "soar",
+  "surge",
+  "thrive",
+  "vault",
+  "voyage",
+  "zenith",
+]
+
+function generateRandomUsername(): string {
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)]
+  const noun = nouns[Math.floor(Math.random() * nouns.length)]
+  const num = Math.floor(Math.random() * 100)
+  // Capitalize first letter of each word
+  return `${adj.charAt(0).toUpperCase()}${adj.slice(1)}${noun.charAt(0).toUpperCase()}${noun.slice(1)}${num}`
+}
+
+// Get current user's profile (creates one with random username if missing)
 export const getMyProfile = query({
   args: {},
   handler: async (ctx) => {
@@ -21,12 +86,16 @@ export const getMyProfile = query({
       avatarUrl = await ctx.storage.getUrl(profile.avatarId)
     }
 
+    // If no profile exists, indicate we need one (will be created via mutation)
+    const needsProfile = !profile
+
     return {
       userId,
       email: user?.email,
-      username: profile?.username || user?.name || user?.email?.split("@")[0],
+      username: profile?.username,
       avatarUrl,
       bio: profile?.bio,
+      needsProfile,
     }
   },
 })
@@ -167,5 +236,44 @@ export const removeAvatar = mutation({
     }
 
     return { success: true }
+  },
+})
+
+// Ensure user has a profile with random username (called on first activity)
+export const ensureProfile = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+
+    const existingProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first()
+
+    if (existingProfile) {
+      return { username: existingProfile.username }
+    }
+
+    // Generate unique username
+    let username = generateRandomUsername()
+    let attempts = 0
+    while (attempts < 10) {
+      const taken = await ctx.db
+        .query("userProfiles")
+        .withIndex("by_username", (q) => q.eq("username", username.toLowerCase()))
+        .first()
+      if (!taken) break
+      username = generateRandomUsername()
+      attempts++
+    }
+
+    await ctx.db.insert("userProfiles", {
+      userId,
+      username: username.toLowerCase(),
+      updatedAt: Date.now(),
+    })
+
+    return { username: username.toLowerCase() }
   },
 })
