@@ -281,6 +281,28 @@ export const create = mutation({
       }),
     )
 
+    // Auto opt-in to public community on first board creation
+    const existingOptIn = await ctx.db
+      .query("eventFeedOptIn")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first()
+
+    if (!existingOptIn) {
+      await ctx.db.insert("eventFeedOptIn", {
+        userId,
+        optedInAt: now,
+      })
+
+      // Welcome event for first-time community join
+      const user = await ctx.db.get(userId)
+      await ctx.db.insert("eventFeed", {
+        userId,
+        eventType: "user_joined",
+        boardName: user?.name || user?.email || "Someone",
+        createdAt: now,
+      })
+    }
+
     // Create event feed entry for board creation
     await ctx.scheduler.runAfter(0, internal.boards.createEventFeedEntry, {
       userId,
