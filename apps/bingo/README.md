@@ -35,13 +35,31 @@ Track your yearly goals on a 5x5 bingo board. Complete goals, get BINGO!
 
 ## Potential Features
 
+### High Priority
 - [ ] Reminders - Daily notifications for streak goals
 - [ ] Streak grace period - Allow 1 missed day without losing streak
 - [ ] Goal categories - Health, Career, Personal, etc.
+- [ ] Export to image - Share board as PNG/PDF
+
+### Medium Priority
 - [ ] Yearly templates - Pre-made boards for common goal themes
 - [ ] Progress analytics - Charts showing completion over time
 - [ ] Achievements/badges - Gamification for milestones
-- [ ] Export to image - Share board as PNG/PDF
+- [ ] Board themes - Custom colors and styles
+- [ ] Goal notes - Add private notes/journal entries to goals
+- [ ] Recurring goals - Goals that reset weekly/monthly
+
+### Community Enhancements
+- [ ] Community leaderboards - Most goals completed, longest streaks
+- [ ] Goal challenges - Community-wide challenges (e.g., "30 day fitness")
+- [ ] Accountability partners - Pair up with someone for mutual motivation
+- [ ] Community goal templates - Share and copy goals from others
+
+### Nice to Have
+- [ ] Dark mode
+- [ ] Offline support with sync
+- [ ] Desktop notifications
+- [ ] iCal/Google Calendar integration for streaks
 
 ## Development Setup
 
