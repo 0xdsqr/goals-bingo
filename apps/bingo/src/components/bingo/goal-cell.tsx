@@ -120,7 +120,7 @@ export function GoalCell({
             e.stopPropagation()
             setIsEditing(true)
           }}
-          className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] p-0.5 hover:bg-accent rounded"
+          className="absolute top-0.5 right-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[8px] p-0.5 hover:bg-accent rounded"
         >
           edit
         </button>
