@@ -1,22 +1,21 @@
 {
-  "name": "hoo",
-  "module": "index.ts",
+  "name": "goals-bingo",
   "type": "module",
+  "private": true,
   "workspaces": [
-    "tooling/typescript"
+    "apps/*",
+    "tooling/*"
   ],
   "scripts": {
-    "build": "bun run --filter='@goals-bingo/*' build",     
-    "clean": "rm -rf packages/*/dist packages/*/coverage",
-    "changeset": "changeset",
-    "release": "bun run build && changeset version && changeset publish"
+    "dev": "bun run --filter @goals-bingo/bingo dev",
+    "dev:convex": "bun run --filter @goals-bingo/bingo dev:convex",
+    "build": "bun run --filter @goals-bingo/bingo build",
+    "clean": "rm -rf apps/*/dist apps/*/.vinxi"
   },
   "devDependencies": {
-    "@changesets/cli": "2.29.8",
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "private": true
+  }
 }

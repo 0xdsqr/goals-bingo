@@ -1,0 +1,11 @@
+{
+  "extends": "@goals-bingo/tsconfig/web.json",
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["convex/**/*", "node_modules"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
