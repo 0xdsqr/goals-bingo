@@ -38,15 +38,13 @@ export const Route = createRootRouteWithContext<{
           "Track your yearly goals with a bingo board. Add goals, check them off, get a BINGO.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "/og-image.png" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Goals Bingo" },
       {
         name: "twitter:description",
         content:
           "Track your yearly goals with a bingo board. Add goals, check them off, get a BINGO.",
       },
-      { name: "twitter:image", content: "/og-image.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
