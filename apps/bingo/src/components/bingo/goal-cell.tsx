@@ -729,25 +729,22 @@ function GoalEditDialog({
                         </Button>
                       ))}
                     </div>
-                    <Input
-                      id="streak-target"
-                      type="number"
-                      value={streakTargetDays}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val === "") {
-                          setStreakTargetDays(1)
-                        } else {
-                          const num = parseInt(val, 10)
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">or</span>
+                      <Input
+                        id="streak-target"
+                        type="number"
+                        placeholder="Custom days"
+                        onChange={(e) => {
+                          const num = parseInt(e.target.value, 10)
                           if (!isNaN(num) && num >= 1) {
                             setStreakTargetDays(num)
                           }
-                        }
-                      }}
-                      className="w-full"
-                      min={1}
-                      placeholder="Enter days..."
-                    />
+                        }}
+                        className="w-32"
+                        min={1}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -795,26 +792,22 @@ function GoalEditDialog({
                         </Button>
                       ))}
                     </div>
-                    <Input
-                      id="progress-target"
-                      type="number"
-                      value={progressTarget}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        // Allow empty string while typing, but ensure min of 1 on blur
-                        if (val === "") {
-                          setProgressTarget(1)
-                        } else {
-                          const num = parseInt(val, 10)
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">or</span>
+                      <Input
+                        id="progress-target"
+                        type="number"
+                        placeholder="Custom number"
+                        onChange={(e) => {
+                          const num = parseInt(e.target.value, 10)
                           if (!isNaN(num) && num >= 1) {
                             setProgressTarget(num)
                           }
-                        }
-                      }}
-                      className="w-full"
-                      min={1}
-                      placeholder="Enter a number..."
-                    />
+                        }}
+                        className="w-32"
+                        min={1}
+                      />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       How many times to complete this goal
                     </p>

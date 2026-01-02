@@ -138,6 +138,7 @@ export const update = mutation({
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
+              goalText: args.text || goal.text,
             },
           )
         } else if (gotNewBingo) {
@@ -151,6 +152,7 @@ export const update = mutation({
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
+              goalText: args.text || goal.text,
             },
           )
         } else {
@@ -163,6 +165,7 @@ export const update = mutation({
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
+              goalText: args.text || goal.text,
             },
           )
         }
@@ -350,6 +353,7 @@ export const toggleComplete = mutation({
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
+              goalText: goal.text,
             },
           )
         } else if (gotNewBingo) {
@@ -362,6 +366,7 @@ export const toggleComplete = mutation({
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
+              goalText: goal.text,
             },
           )
         } else {
@@ -374,6 +379,7 @@ export const toggleComplete = mutation({
               boardId: goal.boardId,
               goalId: args.id,
               boardName: board.name,
+              goalText: goal.text,
             },
           )
         }
