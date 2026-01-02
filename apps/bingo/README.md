@@ -22,13 +22,13 @@ Track your yearly goals on a 5x5 bingo board. Complete goals, get BINGO!
 
 ## Potential Features
 
-- **Reminders** - Daily notifications for streak goals
-- **Streak grace period** - Allow 1 missed day without losing streak
-- **Goal categories** - Health, Career, Personal, etc.
-- **Yearly templates** - Pre-made boards for common goal themes
-- **Progress analytics** - Charts showing completion over time
-- **Achievements/badges** - Gamification for milestones
-- **Export to image** - Share board as PNG/PDF
+- [ ] Reminders - Daily notifications for streak goals
+- [ ] Streak grace period - Allow 1 missed day without losing streak
+- [ ] Goal categories - Health, Career, Personal, etc.
+- [ ] Yearly templates - Pre-made boards for common goal themes
+- [ ] Progress analytics - Charts showing completion over time
+- [ ] Achievements/badges - Gamification for milestones
+- [ ] Export to image - Share board as PNG/PDF
 
 ## Development Setup
 
