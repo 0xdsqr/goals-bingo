@@ -43,9 +43,29 @@ function BoardDetailPage() {
     try {
       const { shareId } = await generateShareLink({ id: board._id })
       const shareUrl = `${window.location.origin}/share/${shareId}`
-      await navigator.clipboard.writeText(shareUrl)
-      setShowCopied(true)
-      setTimeout(() => setShowCopied(false), 2000)
+
+      // Try native share on mobile first
+      if (navigator.share) {
+        await navigator.share({
+          title: board.name,
+          url: shareUrl,
+        })
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(shareUrl)
+        setShowCopied(true)
+        setTimeout(() => setShowCopied(false), 2000)
+      }
+    } catch (err) {
+      // If share was cancelled or clipboard failed, try fallback
+      if ((err as Error).name !== "AbortError") {
+        const { shareId } = board
+        if (shareId) {
+          const shareUrl = `${window.location.origin}/share/${shareId}`
+          // Last resort fallback - prompt user
+          prompt("Copy this link:", shareUrl)
+        }
+      }
     } finally {
       setIsSharing(false)
     }
