@@ -33,6 +33,10 @@ export default defineSchema({
     isStreakGoal: v.optional(v.boolean()),
     streakTargetDays: v.optional(v.number()), // e.g., 30, 60, 90
     streakStartDate: v.optional(v.number()), // timestamp when streak started
+    // Progress goal fields (e.g., "Visit 5 restaurants" - 0/5, 1/5, etc.)
+    isProgressGoal: v.optional(v.boolean()),
+    progressTarget: v.optional(v.number()), // target count (e.g., 5)
+    progressCurrent: v.optional(v.number()), // current count (e.g., 2)
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -57,6 +61,7 @@ export default defineSchema({
       v.literal("streak_milestone"), // 7d, 30d, 60d, 90d milestones
       v.literal("bingo"), // Got a BINGO line!
       v.literal("user_joined"), // First time joining community
+      v.literal("progress_updated"), // Progress goal milestone (e.g., 3/5 restaurants visited)
     ),
     boardId: v.optional(v.id("boards")),
     goalId: v.optional(v.id("goals")),

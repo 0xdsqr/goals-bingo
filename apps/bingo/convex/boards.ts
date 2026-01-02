@@ -463,6 +463,8 @@ export const getEventFeed = query({
 })
 
 // Internal function to create event feed entries
+// Events are always created - visibility is controlled by getEventFeed query
+// This ensures events appear when users opt-in after creating boards
 export const createEventFeedEntry = internalMutation({
   args: {
     userId: v.id("users"),
@@ -475,6 +477,7 @@ export const createEventFeedEntry = internalMutation({
       v.literal("streak_milestone"),
       v.literal("bingo"),
       v.literal("user_joined"),
+      v.literal("progress_updated"),
     ),
     boardId: v.optional(v.id("boards")),
     goalId: v.optional(v.id("goals")),
@@ -483,14 +486,7 @@ export const createEventFeedEntry = internalMutation({
     metadata: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Only create event if user is opted in
-    const optIn = await ctx.db
-      .query("eventFeedOptIn")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first()
-
-    if (!optIn) return null
-
+    // Always create event - getEventFeed filters based on opt-in status
     return await ctx.db.insert("eventFeed", {
       userId: args.userId,
       eventType: args.eventType,

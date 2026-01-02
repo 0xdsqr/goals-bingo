@@ -43,6 +43,9 @@ export const update = mutation({
     isStreakGoal: v.optional(v.boolean()),
     streakTargetDays: v.optional(v.number()),
     streakStartDate: v.optional(v.number()),
+    isProgressGoal: v.optional(v.boolean()),
+    progressTarget: v.optional(v.number()),
+    progressCurrent: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -59,6 +62,22 @@ export const update = mutation({
       ? (args.streakStartDate ?? now)
       : args.streakStartDate
 
+    // If enabling progress goal, set current to 0 if not provided
+    const isNewProgressGoal = args.isProgressGoal && !goal.isProgressGoal
+    const progressCurrent = isNewProgressGoal
+      ? (args.progressCurrent ?? 0)
+      : args.progressCurrent
+
+    // Check if progress goal just hit target
+    const progressTarget = args.progressTarget ?? goal.progressTarget
+    const oldProgress = goal.progressCurrent ?? 0
+    const newProgress = progressCurrent ?? goal.progressCurrent ?? 0
+    const progressJustCompleted =
+      goal.isProgressGoal &&
+      progressTarget &&
+      oldProgress < progressTarget &&
+      newProgress >= progressTarget
+
     await ctx.db.patch(args.id, {
       ...(args.text !== undefined && { text: args.text }),
       ...(args.isCompleted !== undefined && {
@@ -72,6 +91,18 @@ export const update = mutation({
         streakTargetDays: args.streakTargetDays,
       }),
       ...(streakStartDate !== undefined && { streakStartDate }),
+      ...(args.isProgressGoal !== undefined && {
+        isProgressGoal: args.isProgressGoal,
+      }),
+      ...(args.progressTarget !== undefined && {
+        progressTarget: args.progressTarget,
+      }),
+      ...(progressCurrent !== undefined && { progressCurrent }),
+      // Auto-complete progress goals when target is reached
+      ...(progressJustCompleted && {
+        isCompleted: true,
+        completedAt: now,
+      }),
       updatedAt: now,
     })
 
@@ -158,6 +189,74 @@ export const update = mutation({
           goalText: args.text || goal.text,
           metadata: JSON.stringify({
             targetDays: args.streakTargetDays || goal.streakTargetDays,
+          }),
+        })
+      }
+    }
+
+    // Emit progress_updated event when progress goal is completed
+    if (progressJustCompleted) {
+      const board = await ctx.db.get(goal.boardId)
+      if (board) {
+        await ctx.scheduler.runAfter(0, internal.boards.createEventFeedEntry, {
+          userId,
+          eventType: "goal_completed",
+          boardId: goal.boardId,
+          goalId: args.id,
+          boardName: board.name,
+          goalText: args.text || goal.text,
+          metadata: JSON.stringify({
+            progressTarget,
+            progressCurrent: newProgress,
+          }),
+        })
+      }
+    }
+  },
+})
+
+export const incrementProgress = mutation({
+  args: {
+    id: v.id("goals"),
+    delta: v.optional(v.number()), // defaults to 1
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+    const goal = await ctx.db.get(args.id)
+    if (!goal || goal.userId !== userId) throw new Error("Goal not found")
+    if (!goal.isProgressGoal) throw new Error("Not a progress goal")
+
+    const now = Date.now()
+    const delta = args.delta ?? 1
+    const oldProgress = goal.progressCurrent ?? 0
+    const newProgress = Math.max(0, oldProgress + delta)
+    const target = goal.progressTarget ?? 1
+    const justCompleted = oldProgress < target && newProgress >= target
+
+    await ctx.db.patch(args.id, {
+      progressCurrent: newProgress,
+      ...(justCompleted && {
+        isCompleted: true,
+        completedAt: now,
+      }),
+      updatedAt: now,
+    })
+
+    // Emit event when goal is completed via progress
+    if (justCompleted) {
+      const board = await ctx.db.get(goal.boardId)
+      if (board) {
+        await ctx.scheduler.runAfter(0, internal.boards.createEventFeedEntry, {
+          userId,
+          eventType: "goal_completed",
+          boardId: goal.boardId,
+          goalId: args.id,
+          boardName: board.name,
+          goalText: goal.text,
+          metadata: JSON.stringify({
+            progressTarget: target,
+            progressCurrent: newProgress,
           }),
         })
       }
