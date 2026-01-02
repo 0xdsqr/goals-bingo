@@ -1,16 +1,16 @@
-import { GoalCell } from "./goal-cell";
-import { checkBingo, BINGO_LETTERS } from "@/lib/types";
-import type { Goal } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { Goal } from "@/lib/types"
+import { BINGO_LETTERS, checkBingo } from "@/lib/types"
+import { cn } from "@/lib/utils"
+import { GoalCell } from "./goal-cell"
 
 interface BoardProps {
-  goals: Goal[];
-  size: number;
-  onUpdateGoal: (goalId: string, text: string) => void;
-  onToggleGoal: (goalId: string) => void;
-  title?: string;
-  description?: string;
-  readOnly?: boolean;
+  goals: Goal[]
+  size: number
+  onUpdateGoal: (goalId: string, text: string) => void
+  onToggleGoal: (goalId: string) => void
+  title?: string
+  description?: string
+  readOnly?: boolean
 }
 
 export function Board({
@@ -22,11 +22,12 @@ export function Board({
   description,
   readOnly = false,
 }: BoardProps) {
-  const sortedGoals = [...goals].sort((a, b) => a.position - b.position);
-  const hasBingo = checkBingo(goals, size);
-  const completedCount = goals.filter((g) => g.isCompleted).length;
-  const nonFreeSpaceCount = goals.filter((g) => !g.isFreeSpace).length;
-  const nonFreeSpaceCompleted = goals.filter((g) => g.isCompleted && !g.isFreeSpace).length;
+  const sortedGoals = [...goals].sort((a, b) => a.position - b.position)
+  const hasBingo = checkBingo(goals, size)
+  const nonFreeSpaceCount = goals.filter((g) => !g.isFreeSpace).length
+  const nonFreeSpaceCompleted = goals.filter(
+    (g) => g.isCompleted && !g.isFreeSpace,
+  ).length
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -74,12 +75,14 @@ export function Board({
           <GoalCell
             key={goal.id}
             goal={goal}
-            onUpdate={readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)}
+            onUpdate={
+              readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)
+            }
             onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
             readOnly={readOnly}
           />
         ))}
       </div>
     </div>
-  );
+  )
 }

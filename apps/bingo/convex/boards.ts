@@ -1,72 +1,72 @@
-import { v } from "convex/values";
-import { mutation, query, internalMutation, action } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
-import { internal } from "./_generated/api";
-import OpenAI from "openai";
+import { getAuthUserId } from "@convex-dev/auth/server"
+import { v } from "convex/values"
+import OpenAI from "openai"
+import { internal } from "./_generated/api"
+import { action, internalMutation, mutation, query } from "./_generated/server"
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return []
     return await ctx.db
       .query("boards")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect();
+      .collect()
   },
-});
+})
 
 export const get = query({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-    const board = await ctx.db.get(args.id);
-    if (!board || board.userId !== userId) return null;
-    return board;
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return null
+    const board = await ctx.db.get(args.id)
+    if (!board || board.userId !== userId) return null
+    return board
   },
-});
+})
 
 // Generate a share link for a board
 export const generateShareLink = mutation({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
 
-    const board = await ctx.db.get(args.id);
-    if (!board || board.userId !== userId) throw new Error("Board not found");
+    const board = await ctx.db.get(args.id)
+    if (!board || board.userId !== userId) throw new Error("Board not found")
 
     // If already has a shareId, return it
     if (board.shareId) {
-      return { shareId: board.shareId };
+      return { shareId: board.shareId }
     }
 
     // Generate a unique share ID (nanoid-style)
     const shareId = Array.from(crypto.getRandomValues(new Uint8Array(10)))
       .map((b) => b.toString(36))
       .join("")
-      .slice(0, 12);
+      .slice(0, 12)
 
-    await ctx.db.patch(args.id, { shareId });
-    return { shareId };
+    await ctx.db.patch(args.id, { shareId })
+    return { shareId }
   },
-});
+})
 
 // Remove share link from a board
 export const removeShareLink = mutation({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
 
-    const board = await ctx.db.get(args.id);
-    if (!board || board.userId !== userId) throw new Error("Board not found");
+    const board = await ctx.db.get(args.id)
+    if (!board || board.userId !== userId) throw new Error("Board not found")
 
-    await ctx.db.patch(args.id, { shareId: undefined });
-    return { success: true };
+    await ctx.db.patch(args.id, { shareId: undefined })
+    return { success: true }
   },
-});
+})
 
 // Get a shared board by shareId (public, no auth required)
 export const getSharedBoard = query({
@@ -75,123 +75,123 @@ export const getSharedBoard = query({
     const board = await ctx.db
       .query("boards")
       .withIndex("by_share_id", (q) => q.eq("shareId", args.shareId))
-      .first();
+      .first()
 
-    if (!board) return null;
+    if (!board) return null
 
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_board", (q) => q.eq("boardId", board._id))
-      .collect();
+      .collect()
 
     // Get owner name
-    const owner = await ctx.db.get(board.userId);
+    const owner = await ctx.db.get(board.userId)
 
     return {
       ...board,
       goals,
       ownerName: owner?.name || owner?.email || "Anonymous",
-    };
+    }
   },
-});
+})
 
 // Get boards from community members (users who opted into event feed)
 export const getCommunityBoards = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return []
 
     // Check if current user is opted in
     const userOptIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first()
 
-    if (!userOptIn) return [];
+    if (!userOptIn) return []
 
     // Get all opted-in users
-    const optIns = await ctx.db.query("eventFeedOptIn").collect();
-    const optedInUserIds = optIns.map((o) => o.userId);
+    const optIns = await ctx.db.query("eventFeedOptIn").collect()
+    const optedInUserIds = optIns.map((o) => o.userId)
 
     // Get boards from opted-in users (excluding current user's boards)
-    const allBoards = await ctx.db.query("boards").collect();
+    const allBoards = await ctx.db.query("boards").collect()
     const communityBoards = allBoards.filter(
       (board) =>
-        optedInUserIds.includes(board.userId) && board.userId !== userId
-    );
+        optedInUserIds.includes(board.userId) && board.userId !== userId,
+    )
 
     // Enrich with owner names
     const enrichedBoards = await Promise.all(
       communityBoards.map(async (board) => {
-        const owner = await ctx.db.get(board.userId);
+        const owner = await ctx.db.get(board.userId)
         return {
           ...board,
           ownerName: owner?.name || owner?.email || "Anonymous",
-        };
-      })
-    );
+        }
+      }),
+    )
 
     // Sort by most recent
-    return enrichedBoards.sort((a, b) => b.createdAt - a.createdAt).slice(0, 20);
+    return enrichedBoards.sort((a, b) => b.createdAt - a.createdAt).slice(0, 20)
   },
-});
+})
 
 // Get a community board with goals (for opted-in community members)
 export const getCommunityBoardWithGoals = query({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return null
 
     // Check if current user is opted in
     const userOptIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first()
 
-    if (!userOptIn) return null;
+    if (!userOptIn) return null
 
-    const board = await ctx.db.get(args.id);
-    if (!board) return null;
+    const board = await ctx.db.get(args.id)
+    if (!board) return null
 
     // Check if board owner is opted in
     const ownerOptIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", board.userId))
-      .first();
+      .first()
 
-    if (!ownerOptIn) return null;
+    if (!ownerOptIn) return null
 
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_board", (q) => q.eq("boardId", board._id))
-      .collect();
+      .collect()
 
-    const owner = await ctx.db.get(board.userId);
+    const owner = await ctx.db.get(board.userId)
 
     return {
       ...board,
       goals,
       ownerName: owner?.name || owner?.email || "Anonymous",
-    };
+    }
   },
-});
+})
 
 export const getWithGoals = query({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-    const board = await ctx.db.get(args.id);
-    if (!board || board.userId !== userId) return null;
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return null
+    const board = await ctx.db.get(args.id)
+    if (!board || board.userId !== userId) return null
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_board", (q) => q.eq("boardId", args.id))
-      .collect();
-    return { ...board, goals };
+      .collect()
+    return { ...board, goals }
   },
-});
+})
 
 export const create = mutation({
   args: {
@@ -206,16 +206,16 @@ export const create = mutation({
           position: v.number(),
           isCompleted: v.boolean(),
           isFreeSpace: v.optional(v.boolean()),
-        })
-      )
+        }),
+      ),
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
 
-    const now = Date.now();
-    const year = args.year ?? new Date().getFullYear();
+    const now = Date.now()
+    const year = args.year ?? new Date().getFullYear()
     const boardId = await ctx.db.insert("boards", {
       userId,
       name: args.name,
@@ -224,16 +224,17 @@ export const create = mutation({
       year,
       createdAt: now,
       updatedAt: now,
-    });
+    })
 
-    const totalCells = args.size * args.size;
-    const centerPosition = Math.floor(totalCells / 2);
-    const positions = Array.from({ length: totalCells }, (_, i) => i);
+    const totalCells = args.size * args.size
+    const centerPosition = Math.floor(totalCells / 2)
+    const positions = Array.from({ length: totalCells }, (_, i) => i)
 
     await Promise.all(
       positions.map((position) => {
-        const existingGoal = args.goals?.find((g) => g.position === position);
-        const isFreeSpace = existingGoal?.isFreeSpace ?? position === centerPosition;
+        const existingGoal = args.goals?.find((g) => g.position === position)
+        const isFreeSpace =
+          existingGoal?.isFreeSpace ?? position === centerPosition
         return ctx.db.insert("goals", {
           boardId,
           userId,
@@ -243,9 +244,9 @@ export const create = mutation({
           isFreeSpace,
           createdAt: now,
           updatedAt: now,
-        });
-      })
-    );
+        })
+      }),
+    )
 
     // Create event feed entry for board creation
     await ctx.scheduler.runAfter(0, internal.boards.createEventFeedEntry, {
@@ -253,90 +254,90 @@ export const create = mutation({
       eventType: "board_created",
       boardId,
       boardName: args.name,
-    });
+    })
 
-    return boardId;
+    return boardId
   },
-});
+})
 
 export const remove = mutation({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-    const board = await ctx.db.get(args.id);
-    if (!board || board.userId !== userId) throw new Error("Board not found");
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+    const board = await ctx.db.get(args.id)
+    if (!board || board.userId !== userId) throw new Error("Board not found")
 
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_board", (q) => q.eq("boardId", args.id))
-      .collect();
+      .collect()
 
-    await Promise.all(goals.map((goal) => ctx.db.delete(goal._id)));
-    await ctx.db.delete(args.id);
+    await Promise.all(goals.map((goal) => ctx.db.delete(goal._id)))
+    await ctx.db.delete(args.id)
   },
-});
+})
 
 // Event Feed Opt-In Functions
 export const getEventFeedStatus = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return { isOptedIn: false };
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return { isOptedIn: false }
 
     const optIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first()
 
-    return { isOptedIn: !!optIn };
+    return { isOptedIn: !!optIn }
   },
-});
+})
 
 export const toggleEventFeedOptIn = mutation({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
 
     const existingOptIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first()
 
     if (existingOptIn) {
-      await ctx.db.delete(existingOptIn._id);
-      return { isOptedIn: false };
+      await ctx.db.delete(existingOptIn._id)
+      return { isOptedIn: false }
     } else {
       await ctx.db.insert("eventFeedOptIn", {
         userId,
         optedInAt: Date.now(),
-      });
-      return { isOptedIn: true };
+      })
+      return { isOptedIn: true }
     }
   },
-});
+})
 
 export const getEventFeed = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return []
 
     // Check if user is opted in
     const optIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first()
 
-    if (!optIn) return [];
+    if (!optIn) return []
 
     // Get recent events from opted-in users only
     const events = await ctx.db
       .query("eventFeed")
       .withIndex("by_created")
       .order("desc")
-      .take(50);
+      .take(50)
 
     // Filter to only show events from opted-in users and enrich with user names
     const enrichedEvents = await Promise.all(
@@ -345,31 +346,31 @@ export const getEventFeed = query({
         const creatorOptIn = await ctx.db
           .query("eventFeedOptIn")
           .withIndex("by_user", (q) => q.eq("userId", event.userId))
-          .first();
+          .first()
 
-        if (!creatorOptIn) return null;
+        if (!creatorOptIn) return null
 
         // Get user name
-        const user = await ctx.db.get(event.userId);
-        
+        const user = await ctx.db.get(event.userId)
+
         // Get board shareId if board exists
-        let shareId: string | undefined;
+        let shareId: string | undefined
         if (event.boardId) {
-          const board = await ctx.db.get(event.boardId);
-          shareId = board?.shareId;
+          const board = await ctx.db.get(event.boardId)
+          shareId = board?.shareId
         }
-        
+
         return {
           ...event,
           userName: user?.name || user?.email || "Anonymous",
           shareId,
-        };
-      })
-    );
+        }
+      }),
+    )
 
-    return enrichedEvents.filter(Boolean).slice(0, 20);
+    return enrichedEvents.filter(Boolean).slice(0, 20)
   },
-});
+})
 
 // Internal function to create event feed entries
 export const createEventFeedEntry = internalMutation({
@@ -378,7 +379,7 @@ export const createEventFeedEntry = internalMutation({
     eventType: v.union(
       v.literal("board_created"),
       v.literal("goal_completed"),
-      v.literal("board_completed")
+      v.literal("board_completed"),
     ),
     boardId: v.optional(v.id("boards")),
     boardName: v.string(),
@@ -388,9 +389,9 @@ export const createEventFeedEntry = internalMutation({
     const optIn = await ctx.db
       .query("eventFeedOptIn")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first();
+      .first()
 
-    if (!optIn) return null;
+    if (!optIn) return null
 
     return await ctx.db.insert("eventFeed", {
       userId: args.userId,
@@ -398,32 +399,36 @@ export const createEventFeedEntry = internalMutation({
       boardId: args.boardId,
       boardName: args.boardName,
       createdAt: Date.now(),
-    });
+    })
   },
-});
+})
 
 // AI Difficulty Ranking Action
 export const rankDifficulty = action({
   args: {
     goals: v.array(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     if (!args.goals || args.goals.length === 0) {
-      return { ranking: "No goals provided to analyze." };
+      return { ranking: "No goals provided to analyze." }
     }
 
-    const openrouterToken = process.env.OPENROUTER_TOKEN;
+    const openrouterToken = process.env.OPENROUTER_TOKEN
     if (!openrouterToken) {
-      return { ranking: "AI service not configured. Please add OPENROUTER_TOKEN to Convex environment variables." };
+      return {
+        ranking:
+          "AI service not configured. Please add OPENROUTER_TOKEN to Convex environment variables.",
+      }
     }
 
     try {
       const openai = new OpenAI({
         apiKey: openrouterToken,
-        baseURL: "https://gateway.ai.cloudflare.com/v1/f8913f78ee578f0e62ccb9ad8a89c60f/goals-bingo/openrouter",
-      });
+        baseURL:
+          "https://gateway.ai.cloudflare.com/v1/f8913f78ee578f0e62ccb9ad8a89c60f/goals-bingo/openrouter",
+      })
 
-      const goalsText = args.goals.map((g, i) => `${i + 1}. ${g}`).join("\n");
+      const goalsText = args.goals.map((g, i) => `${i + 1}. ${g}`).join("\n")
 
       const chatCompletion = await openai.chat.completions.create({
         model: "openai/gpt-3.5-turbo",
@@ -446,13 +451,15 @@ Provide a difficulty rating (Easy/Medium/Hard/Expert) and a brief 2-3 sentence e
           },
         ],
         max_tokens: 200,
-      });
+      })
 
-      const ranking = chatCompletion.choices[0]?.message?.content || "Unable to analyze goals.";
-      return { ranking };
+      const ranking =
+        chatCompletion.choices[0]?.message?.content ||
+        "Unable to analyze goals."
+      return { ranking }
     } catch (error) {
-      console.error("AI ranking error:", error);
-      return { ranking: "Failed to analyze goals. Please try again." };
+      console.error("AI ranking error:", error)
+      return { ranking: "Failed to analyze goals. Please try again." }
     }
   },
-});
+})

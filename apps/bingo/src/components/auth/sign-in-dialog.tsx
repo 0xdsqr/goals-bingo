@@ -1,85 +1,89 @@
-import { useState } from "react";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { useAuthActions } from "@convex-dev/auth/react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface SignInDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-type Step = "choose" | "email" | { email: string };
+type Step = "choose" | "email" | { email: string }
 
-export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProps) {
-  const { signIn } = useAuthActions();
-  const [step, setStep] = useState<Step>("choose");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function SignInDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: SignInDialogProps) {
+  const { signIn } = useAuthActions()
+  const [step, setStep] = useState<Step>("choose")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const reset = () => {
-    setStep("choose");
-    setError(null);
-  };
+    setStep("choose")
+    setError(null)
+  }
 
   const handleClose = (open: boolean) => {
-    if (!open) reset();
-    onOpenChange(open);
-  };
+    if (!open) reset()
+    onOpenChange(open)
+  }
 
   const handleAnonymous = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      await signIn("anonymous");
-      onSuccess?.();
-      handleClose(false);
+      await signIn("anonymous")
+      onSuccess?.()
+      handleClose(false)
     } catch {
-      setError("Failed to sign in");
+      setError("Failed to sign in")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
     try {
-      await signIn("resend-otp", formData);
-      setStep({ email });
+      await signIn("resend-otp", formData)
+      setStep({ email })
     } catch {
-      setError("Failed to send code");
+      setError("Failed to send code")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleCodeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    const formData = new FormData(e.currentTarget);
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    const formData = new FormData(e.currentTarget)
     try {
-      await signIn("resend-otp", formData);
-      onSuccess?.();
-      handleClose(false);
+      await signIn("resend-otp", formData)
+      onSuccess?.()
+      handleClose(false)
     } catch {
-      setError("Invalid code");
+      setError("Invalid code")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -91,7 +95,8 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
             {typeof step === "object" && "Enter code"}
           </DialogTitle>
           <DialogDescription>
-            {step === "choose" && "Sign in to save your goals and access them anywhere."}
+            {step === "choose" &&
+              "Sign in to save your goals and access them anywhere."}
             {step === "email" && "We'll send you a verification code."}
             {typeof step === "object" && `We sent a code to ${step.email}`}
           </DialogDescription>
@@ -99,7 +104,11 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
 
         {step === "choose" && (
           <div className="flex flex-col gap-3 mt-4">
-            <Button onClick={handleAnonymous} disabled={isLoading} variant="outline">
+            <Button
+              onClick={handleAnonymous}
+              disabled={isLoading}
+              variant="outline"
+            >
               {isLoading ? "Signing in..." : "Continue as guest"}
             </Button>
             <div className="relative">
@@ -107,7 +116,9 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">or</span>
+                <span className="bg-background px-2 text-muted-foreground">
+                  or
+                </span>
               </div>
             </div>
             <Button onClick={() => setStep("email")}>Sign in with email</Button>
@@ -115,7 +126,10 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
         )}
 
         {step === "email" && (
-          <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4 mt-4">
+          <form
+            onSubmit={handleEmailSubmit}
+            className="flex flex-col gap-4 mt-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -128,7 +142,11 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
               />
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="ghost" onClick={() => setStep("choose")}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setStep("choose")}
+              >
                 Back
               </Button>
               <Button type="submit" className="flex-1" disabled={isLoading}>
@@ -139,7 +157,10 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
         )}
 
         {typeof step === "object" && (
-          <form onSubmit={handleCodeSubmit} className="flex flex-col gap-4 mt-4">
+          <form
+            onSubmit={handleCodeSubmit}
+            className="flex flex-col gap-4 mt-4"
+          >
             <input type="hidden" name="email" value={step.email} />
             <div className="space-y-2">
               <Label htmlFor="code">Verification code</Label>
@@ -154,7 +175,11 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
               />
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="ghost" onClick={() => setStep("email")}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setStep("email")}
+              >
                 Back
               </Button>
               <Button type="submit" className="flex-1" disabled={isLoading}>
@@ -167,5 +192,5 @@ export function SignInDialog({ open, onOpenChange, onSuccess }: SignInDialogProp
         {error && <p className="text-sm text-destructive mt-2">{error}</p>}
       </DialogContent>
     </Dialog>
-  );
+  )
 }

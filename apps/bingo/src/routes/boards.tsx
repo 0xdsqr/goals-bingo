@@ -1,25 +1,30 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Authenticated, Unauthenticated, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SignInDialog } from "@/components/auth/sign-in-dialog";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { Authenticated, Unauthenticated, useQuery } from "convex/react"
+import { useState } from "react"
+import { SignInDialog } from "@/components/auth/sign-in-dialog"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { api } from "../../convex/_generated/api"
 
 function BoardsPage() {
-  const navigate = useNavigate();
-  const boards = useQuery(api.boards.list) ?? [];
-  const [showSignIn, setShowSignIn] = useState(false);
+  const navigate = useNavigate()
+  const boards = useQuery(api.boards.list) ?? []
+  const [showSignIn, setShowSignIn] = useState(false)
 
   // Group boards by year
-  const boardsByYear = boards.reduce((acc, board) => {
-    const year = board.year ?? new Date(board.createdAt).getFullYear();
-    if (!acc[year]) acc[year] = [];
-    acc[year].push(board);
-    return acc;
-  }, {} as Record<number, typeof boards>);
-  
-  const years = Object.keys(boardsByYear).map(Number).sort((a, b) => b - a);
+  const boardsByYear = boards.reduce(
+    (acc, board) => {
+      const year = board.year ?? new Date(board.createdAt).getFullYear()
+      if (!acc[year]) acc[year] = []
+      acc[year].push(board)
+      return acc
+    },
+    {} as Record<number, typeof boards>,
+  )
+
+  const years = Object.keys(boardsByYear)
+    .map(Number)
+    .sort((a, b) => b - a)
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
@@ -31,7 +36,9 @@ function BoardsPage() {
         </Link>
         <Authenticated>
           <Link to="/">
-            <Button variant="outline" size="sm">+ New Board</Button>
+            <Button variant="outline" size="sm">
+              + New Board
+            </Button>
           </Link>
         </Authenticated>
       </header>
@@ -66,14 +73,19 @@ function BoardsPage() {
           <div className="space-y-6">
             {years.map((year) => (
               <div key={year}>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">{year}</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  {year}
+                </h3>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(boardsByYear[year] ?? []).map((board) => (
                     <Card
                       key={board._id}
                       className="cursor-pointer hover:border-primary/50 transition-colors"
                       onClick={() =>
-                        navigate({ to: "/board/$boardId", params: { boardId: board._id } })
+                        navigate({
+                          to: "/board/$boardId",
+                          params: { boardId: board._id },
+                        })
                       }
                     >
                       <CardHeader className="py-3 px-4">
@@ -93,9 +105,9 @@ function BoardsPage() {
         )}
       </Authenticated>
     </div>
-  );
+  )
 }
 
 export const Route = createFileRoute("/boards")({
   component: BoardsPage,
-});
+})

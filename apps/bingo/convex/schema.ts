@@ -1,6 +1,6 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
+import { authTables } from "@convex-dev/auth/server"
+import { defineSchema, defineTable } from "convex/server"
+import { v } from "convex/values"
 
 export default defineSchema({
   ...authTables,
@@ -45,10 +45,10 @@ export default defineSchema({
     eventType: v.union(
       v.literal("board_created"),
       v.literal("goal_completed"),
-      v.literal("board_completed")
+      v.literal("board_completed"),
     ),
     boardId: v.optional(v.id("boards")),
     boardName: v.string(),
     createdAt: v.number(),
   }).index("by_created", ["createdAt"]),
-});
+})

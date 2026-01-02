@@ -1,28 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Board } from "@/components/bingo/board";
-import type { Goal } from "@/lib/types";
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { useQuery } from "convex/react"
+import { Board } from "@/components/bingo/board"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type { Goal } from "@/lib/types"
+import { api } from "../../convex/_generated/api"
+import type { Id } from "../../convex/_generated/dataModel"
 
 export const Route = createFileRoute("/community/$boardId")({
   component: CommunityBoardPage,
-});
+})
 
 function CommunityBoardPage() {
-  const { boardId } = Route.useParams();
+  const { boardId } = Route.useParams()
   const board = useQuery(api.boards.getCommunityBoardWithGoals, {
     id: boardId as Id<"boards">,
-  });
+  })
 
   if (board === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    );
+    )
   }
 
   if (board === null) {
@@ -32,7 +32,8 @@ function CommunityBoardPage() {
           <CardContent className="py-12 text-center">
             <h2 className="text-xl font-semibold mb-2">Board not found</h2>
             <p className="text-muted-foreground mb-4">
-              This board may not be shared with the community, or you need to join the community to view it.
+              This board may not be shared with the community, or you need to
+              join the community to view it.
             </p>
             <Link to="/">
               <Button>Go to Home</Button>
@@ -40,7 +41,7 @@ function CommunityBoardPage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   // Map Convex goals to local Goal type
@@ -50,11 +51,11 @@ function CommunityBoardPage() {
     position: g.position,
     isCompleted: g.isCompleted,
     isFreeSpace: g.isFreeSpace,
-  }));
+  }))
 
-  const completedGoals = goals.filter((g) => g.isCompleted).length;
-  const totalGoals = goals.length;
-  const progress = Math.round((completedGoals / totalGoals) * 100);
+  const completedGoals = goals.filter((g) => g.isCompleted).length
+  const totalGoals = goals.length
+  const progress = Math.round((completedGoals / totalGoals) * 100)
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
@@ -93,5 +94,5 @@ function CommunityBoardPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

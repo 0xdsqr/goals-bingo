@@ -1,18 +1,19 @@
-import { QueryClient } from "@tanstack/react-query";
-import { createRouter } from "@tanstack/react-router";
-import { ConvexQueryClient } from "@convex-dev/react-query";
-import { ConvexAuthProvider } from "@convex-dev/auth/react";
-import { routeTree } from "./routeTree.gen";
+import { ConvexAuthProvider } from "@convex-dev/auth/react"
+import { ConvexQueryClient } from "@convex-dev/react-query"
+import { QueryClient } from "@tanstack/react-query"
+import { createRouter } from "@tanstack/react-router"
+import { routeTree } from "./routeTree.gen"
 
 export function getRouter() {
-  const convexUrl = (import.meta as ImportMeta & { env: Record<string, string> })
-    .env.VITE_CONVEX_URL;
+  const convexUrl = (
+    import.meta as ImportMeta & { env: Record<string, string> }
+  ).env.VITE_CONVEX_URL
 
   if (!convexUrl) {
-    throw new Error("VITE_CONVEX_URL is not set");
+    throw new Error("VITE_CONVEX_URL is not set")
   }
 
-  const convexQueryClient = new ConvexQueryClient(convexUrl);
+  const convexQueryClient = new ConvexQueryClient(convexUrl)
 
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -21,9 +22,9 @@ export function getRouter() {
         queryFn: convexQueryClient.queryFn(),
       },
     },
-  });
+  })
 
-  convexQueryClient.connect(queryClient);
+  convexQueryClient.connect(queryClient)
 
   const router = createRouter({
     routeTree,
@@ -35,7 +36,7 @@ export function getRouter() {
         {children}
       </ConvexAuthProvider>
     ),
-  });
+  })
 
-  return router;
+  return router
 }

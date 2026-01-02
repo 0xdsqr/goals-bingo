@@ -1,62 +1,67 @@
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useConvexAuth, useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SignInDialog } from "@/components/auth/sign-in-dialog";
-import { useState, useCallback } from "react";
-import { checkBingo } from "@/lib/types";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router"
+import { useConvexAuth, useMutation, useQuery } from "convex/react"
+import { useCallback, useState } from "react"
+import { SignInDialog } from "@/components/auth/sign-in-dialog"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { checkBingo } from "@/lib/types"
+import { api } from "../../convex/_generated/api"
+import type { Id } from "../../convex/_generated/dataModel"
 
 export const Route = createFileRoute("/board/$boardId")({
   component: BoardDetailPage,
-});
+})
 
 function BoardDetailPage() {
-  const { boardId } = Route.useParams();
-  const navigate = useNavigate();
-  const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+  const { boardId } = Route.useParams()
+  const navigate = useNavigate()
+  const { isLoading: authLoading, isAuthenticated } = useConvexAuth()
 
   const board = useQuery(api.boards.getWithGoals, {
     id: boardId as Id<"boards">,
-  });
-  const updateGoal = useMutation(api.goals.update);
-  const toggleGoal = useMutation(api.goals.toggleComplete);
-  const removeBoard = useMutation(api.boards.remove);
-  const generateShareLink = useMutation(api.boards.generateShareLink);
-  const removeShareLink = useMutation(api.boards.removeShareLink);
+  })
+  const updateGoal = useMutation(api.goals.update)
+  const toggleGoal = useMutation(api.goals.toggleComplete)
+  const removeBoard = useMutation(api.boards.remove)
+  const generateShareLink = useMutation(api.boards.generateShareLink)
+  const removeShareLink = useMutation(api.boards.removeShareLink)
 
-  const [showSignIn, setShowSignIn] = useState(false);
-  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-  const [isSharing, setIsSharing] = useState(false);
-  const [showCopied, setShowCopied] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false)
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null)
+  const [editText, setEditText] = useState("")
+  const [isSharing, setIsSharing] = useState(false)
+  const [showCopied, setShowCopied] = useState(false)
 
   const handleShare = useCallback(async () => {
-    if (!board) return;
-    setIsSharing(true);
+    if (!board) return
+    setIsSharing(true)
     try {
-      const { shareId } = await generateShareLink({ id: board._id });
-      const shareUrl = `${window.location.origin}/share/${shareId}`;
-      await navigator.clipboard.writeText(shareUrl);
-      setShowCopied(true);
-      setTimeout(() => setShowCopied(false), 2000);
+      const { shareId } = await generateShareLink({ id: board._id })
+      const shareUrl = `${window.location.origin}/share/${shareId}`
+      await navigator.clipboard.writeText(shareUrl)
+      setShowCopied(true)
+      setTimeout(() => setShowCopied(false), 2000)
     } finally {
-      setIsSharing(false);
+      setIsSharing(false)
     }
-  }, [board, generateShareLink]);
+  }, [board, generateShareLink])
 
   const handleRemoveShare = useCallback(async () => {
-    if (!board) return;
-    await removeShareLink({ id: board._id });
-  }, [board, removeShareLink]);
+    if (!board) return
+    await removeShareLink({ id: board._id })
+  }, [board, removeShareLink])
 
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading...</p>
       </div>
-    );
+    )
   }
 
   if (!isAuthenticated) {
@@ -64,13 +69,15 @@ function BoardDetailPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground mb-4">Sign in to view this board</p>
+            <p className="text-muted-foreground mb-4">
+              Sign in to view this board
+            </p>
             <Button onClick={() => setShowSignIn(true)}>Sign In</Button>
           </CardContent>
         </Card>
         <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
       </div>
-    );
+    )
   }
 
   if (board === undefined) {
@@ -78,7 +85,7 @@ function BoardDetailPage() {
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading board...</p>
       </div>
-    );
+    )
   }
 
   if (board === null) {
@@ -93,10 +100,10 @@ function BoardDetailPage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
-  const sortedGoals = [...board.goals].sort((a, b) => a.position - b.position);
+  const sortedGoals = [...board.goals].sort((a, b) => a.position - b.position)
   const hasBingo = checkBingo(
     sortedGoals.map((g) => ({
       id: g._id,
@@ -104,27 +111,27 @@ function BoardDetailPage() {
       position: g.position,
       isCompleted: g.isCompleted,
     })),
-    board.size
-  );
-  const completedCount = sortedGoals.filter((g) => g.isCompleted).length;
+    board.size,
+  )
+  const completedCount = sortedGoals.filter((g) => g.isCompleted).length
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this board?")) {
-      await removeBoard({ id: board._id });
-      navigate({ to: "/boards" });
+      await removeBoard({ id: board._id })
+      navigate({ to: "/boards" })
     }
-  };
+  }
 
   const handleStartEdit = (goalId: string, currentText: string) => {
-    setEditingGoalId(goalId);
-    setEditText(currentText);
-  };
+    setEditingGoalId(goalId)
+    setEditText(currentText)
+  }
 
   const handleSaveEdit = async (goalId: Id<"goals">) => {
-    await updateGoal({ id: goalId, text: editText });
-    setEditingGoalId(null);
-    setEditText("");
-  };
+    await updateGoal({ id: goalId, text: editText })
+    setEditingGoalId(null)
+    setEditText("")
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -143,11 +150,7 @@ function BoardDetailPage() {
               >
                 {showCopied ? "Copied!" : "Copy Link"}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRemoveShare}
-              >
+              <Button variant="ghost" size="sm" onClick={handleRemoveShare}>
                 Unshare
               </Button>
             </>
@@ -171,7 +174,9 @@ function BoardDetailPage() {
         <CardHeader>
           <CardTitle className="text-center">{board.name}</CardTitle>
           {board.description && (
-            <p className="text-center text-muted-foreground">{board.description}</p>
+            <p className="text-center text-muted-foreground">
+              {board.description}
+            </p>
           )}
           <div className="flex items-center justify-center gap-4 pt-2">
             <span className="text-sm text-muted-foreground">
@@ -190,8 +195,8 @@ function BoardDetailPage() {
             style={{ gridTemplateColumns: `repeat(${board.size}, 1fr)` }}
           >
             {sortedGoals.map((goal) => {
-              const isEditing = editingGoalId === goal._id;
-              const isEmpty = !goal.text;
+              const isEditing = editingGoalId === goal._id
+              const isEmpty = !goal.text
 
               return (
                 <div
@@ -206,9 +211,9 @@ function BoardDetailPage() {
                   onClick={() => {
                     if (!isEditing) {
                       if (isEmpty) {
-                        handleStartEdit(goal._id, "");
+                        handleStartEdit(goal._id, "")
                       } else {
-                        toggleGoal({ id: goal._id });
+                        toggleGoal({ id: goal._id })
                       }
                     }
                   }}
@@ -220,11 +225,11 @@ function BoardDetailPage() {
                       onBlur={() => handleSaveEdit(goal._id)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSaveEdit(goal._id);
+                          e.preventDefault()
+                          handleSaveEdit(goal._id)
                         }
                         if (e.key === "Escape") {
-                          setEditingGoalId(null);
+                          setEditingGoalId(null)
                         }
                       }}
                       autoFocus
@@ -244,8 +249,8 @@ function BoardDetailPage() {
                       {!isEmpty && (
                         <button
                           onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartEdit(goal._id, goal.text);
+                            e.stopPropagation()
+                            handleStartEdit(goal._id, goal.text)
                           }}
                           className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs p-1 hover:bg-accent rounded"
                         >
@@ -260,11 +265,11 @@ function BoardDetailPage() {
                     </>
                   )}
                 </div>
-              );
+              )
             })}
           </div>
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
