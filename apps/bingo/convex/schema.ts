@@ -12,6 +12,7 @@ export default defineSchema({
     size: v.number(),
     year: v.number(), // Year the board is for (e.g., 2025, 2026)
     shareId: v.optional(v.string()), // Unique ID for public sharing
+    difficulty: v.optional(v.string()), // AI difficulty rating (Easy/Medium/Hard/Expert)
     createdAt: v.number(),
     updatedAt: v.number(),
   })

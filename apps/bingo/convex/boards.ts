@@ -265,6 +265,7 @@ export const update = mutation({
     id: v.id("boards"),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
+    difficulty: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -275,6 +276,7 @@ export const update = mutation({
     await ctx.db.patch(args.id, {
       ...(args.name !== undefined && { name: args.name }),
       ...(args.description !== undefined && { description: args.description }),
+      ...(args.difficulty !== undefined && { difficulty: args.difficulty }),
       updatedAt: Date.now(),
     })
   },

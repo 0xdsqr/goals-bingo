@@ -85,6 +85,12 @@ function SharedBoardPage() {
             <span>
               Created {new Date(board.createdAt).toLocaleDateString()}
             </span>
+            {board.difficulty && (
+              <>
+                <span>·</span>
+                <span>{board.difficulty}</span>
+              </>
+            )}
           </div>
         </CardHeader>
         <CardContent className="pt-2">

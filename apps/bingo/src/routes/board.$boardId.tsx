@@ -172,7 +172,14 @@ function BoardDetailPage() {
       const result = await rankDifficultyAction({
         goals: goalsWithText.map((g) => g.text),
       })
-      setDifficultyRank(result.ranking || "Unable to rank at this time.")
+      const ranking = result.ranking || "Unable to rank at this time."
+      setDifficultyRank(ranking)
+
+      // Extract difficulty level and save to board
+      const difficultyMatch = ranking.match(/\b(Easy|Medium|Hard|Expert)\b/i)
+      if (difficultyMatch) {
+        await updateBoard({ id: board._id, difficulty: difficultyMatch[1] })
+      }
     } catch {
       setDifficultyRank("Failed to get ranking. Please try again.")
     } finally {
@@ -256,6 +263,12 @@ function BoardDetailPage() {
             <span>
               Created {new Date(board.createdAt).toLocaleDateString()}
             </span>
+            {board.difficulty && (
+              <>
+                <span>·</span>
+                <span>{board.difficulty}</span>
+              </>
+            )}
           </div>
         </CardHeader>
         <CardContent className="pt-2">
