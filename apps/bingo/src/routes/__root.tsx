@@ -26,6 +26,27 @@ export const Route = createRootRouteWithContext<{
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Goals Bingo - Track Your Goals" },
+      {
+        name: "description",
+        content:
+          "Track your yearly goals with a bingo board. Add goals, check them off, get a BINGO.",
+      },
+      { property: "og:title", content: "Goals Bingo" },
+      {
+        property: "og:description",
+        content:
+          "Track your yearly goals with a bingo board. Add goals, check them off, get a BINGO.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "/og-image.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Goals Bingo" },
+      {
+        name: "twitter:description",
+        content:
+          "Track your yearly goals with a bingo board. Add goals, check them off, get a BINGO.",
+      },
+      { name: "twitter:image", content: "/og-image.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
