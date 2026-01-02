@@ -62,9 +62,11 @@ function SharedBoardPage() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground border-b-2 border-dotted border-primary pb-1">
-          Goals Bingo
-        </h1>
+        <Link to="/">
+          <h1 className="text-2xl font-bold text-foreground border-b-2 border-dotted border-primary pb-1 hover:text-primary transition-colors cursor-pointer">
+            Goals Bingo
+          </h1>
+        </Link>
         <Link to="/">
           <Button variant="outline" size="sm">
             Create Your Own

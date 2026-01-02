@@ -315,23 +315,82 @@ function EventCard({ event }: { event: EventFeedItem }) {
     const metadata = event.metadata ? JSON.parse(event.metadata) : {}
     switch (event.eventType) {
       case "board_created":
-        return `created "${event.boardName}"`
+        return (
+          <>
+            created{" "}
+            <span className="border-b-2 border-dotted border-blue-500 text-blue-500 font-medium">
+              {event.boardName}
+            </span>
+          </>
+        )
       case "goal_completed":
-        return "completed a goal"
+        return (
+          <>
+            completed{" "}
+            <span className="border-b-2 border-dotted border-green-500 text-green-500 font-medium">
+              {event.goalText || "a goal"}
+            </span>
+          </>
+        )
       case "board_completed":
-        return `finished "${event.boardName}"!`
+        return (
+          <>
+            finished{" "}
+            <span className="border-b-2 border-dotted border-yellow-500 text-yellow-500 font-medium">
+              {event.boardName}
+            </span>
+            !
+          </>
+        )
       case "streak_started":
-        return `started a ${metadata.targetDays}-day streak`
+        return (
+          <>
+            started a{" "}
+            <span className="border-b-2 border-dotted border-orange-500 text-orange-500 font-medium">
+              {metadata.targetDays}-day streak
+            </span>
+          </>
+        )
       case "streak_reset":
-        return `reset their streak after ${metadata.previousDays} days`
+        return (
+          <>
+            reset streak after{" "}
+            <span className="border-b-2 border-dotted border-red-400 text-red-400 font-medium">
+              {metadata.previousDays} days
+            </span>
+          </>
+        )
       case "streak_milestone":
-        return `hit ${metadata.days} days on their streak!`
+        return (
+          <>
+            hit{" "}
+            <span className="border-b-2 border-dotted border-green-500 text-green-500 font-medium">
+              {metadata.days} days
+            </span>
+            !
+          </>
+        )
       case "bingo":
-        return `got BINGO on "${event.boardName}"!`
+        return (
+          <>
+            got{" "}
+            <span className="border-b-2 border-dotted border-purple-500 text-purple-500 font-bold">
+              BINGO!
+            </span>{" "}
+            on {event.boardName}
+          </>
+        )
       case "user_joined":
-        return "joined the community! 👋"
+        return (
+          <>
+            <span className="border-b-2 border-dotted border-primary text-primary font-medium">
+              joined
+            </span>{" "}
+            the community! 👋
+          </>
+        )
       default:
-        return "did something"
+        return <>did something</>
     }
   }
 
