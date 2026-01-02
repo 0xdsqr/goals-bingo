@@ -47,7 +47,7 @@ export function Board({
   ).length
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md lg:max-w-xl xl:max-w-2xl mx-auto">
       {(title || description) && (
         <div className="text-center mb-6">
           {title && <h2 className="text-2xl font-bold">{title}</h2>}

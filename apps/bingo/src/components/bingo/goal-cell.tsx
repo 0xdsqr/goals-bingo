@@ -226,7 +226,7 @@ export function GoalCell({
           }}
         >
           {/* Circular progress indicator */}
-          <div className="relative w-7 h-7 sm:w-9 sm:h-9 shrink-0">
+          <div className="relative w-7 h-7 sm:w-9 sm:h-9 lg:w-12 lg:h-12 shrink-0">
             <svg
               className="w-full h-full -rotate-90"
               viewBox="0 0 36 36"
@@ -254,16 +254,16 @@ export function GoalCell({
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[5px] sm:text-[7px] font-bold font-mono">
+            <span className="absolute inset-0 flex items-center justify-center text-[5px] sm:text-[7px] lg:text-[9px] font-bold font-mono">
               {liveTime}
             </span>
           </div>
 
-          <span className="text-[7px] sm:text-[9px] text-center break-words line-clamp-2 leading-tight flex-1 min-h-0">
+          <span className="text-[7px] sm:text-[9px] lg:text-xs text-center break-words line-clamp-2 leading-tight flex-1 min-h-0">
             {goal.text}
           </span>
 
-          <span className="text-[6px] sm:text-[7px] text-muted-foreground shrink-0">
+          <span className="text-[6px] sm:text-[7px] lg:text-[9px] text-muted-foreground shrink-0">
             {currentDays}/{targetDays}d
           </span>
 
@@ -394,13 +394,13 @@ export function GoalCell({
             </div>
           </div>
 
-          <span className="text-[7px] sm:text-[9px] text-center break-words line-clamp-2 leading-tight flex-1 min-h-0">
+          <span className="text-[7px] sm:text-[9px] lg:text-xs text-center break-words line-clamp-2 leading-tight flex-1 min-h-0">
             {goal.text}
           </span>
 
           <span
             className={cn(
-              "text-[8px] sm:text-[10px] font-semibold shrink-0",
+              "text-[8px] sm:text-[10px] lg:text-sm font-semibold shrink-0",
               isComplete ? "text-green-500" : "text-blue-500",
             )}
           >
@@ -541,7 +541,7 @@ export function GoalCell({
       >
         <span
           className={cn(
-            "text-[10px] sm:text-xs text-center break-words line-clamp-3 leading-tight",
+            "text-[10px] sm:text-xs lg:text-sm text-center break-words line-clamp-3 leading-tight",
             isEmpty && "text-muted-foreground italic",
           )}
         >
@@ -555,14 +555,14 @@ export function GoalCell({
               e.stopPropagation()
               setShowEditDialog(true)
             }}
-            className="absolute top-0.5 right-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[8px] p-0.5 hover:bg-accent rounded"
+            className="absolute top-0.5 right-0.5 lg:top-1 lg:right-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[8px] lg:text-[10px] p-0.5 hover:bg-accent rounded"
           >
             edit
           </button>
         )}
 
         {goal.isCompleted && (
-          <span className="absolute bottom-0.5 right-0.5 text-green-500 font-bold text-[8px]">
+          <span className="absolute bottom-0.5 right-0.5 lg:bottom-1 lg:right-1 text-green-500 font-bold text-[8px] lg:text-[10px]">
             done
           </span>
         )}
