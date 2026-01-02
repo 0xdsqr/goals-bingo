@@ -30,14 +30,34 @@ Avatar.displayName = "Avatar"
 interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {}
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, alt, ...props }, ref) => (
-    <img
-      ref={ref}
-      alt={alt}
-      className={cn("aspect-square h-full w-full object-cover", className)}
-      {...props}
-    />
-  ),
+  ({ className, alt, src, ...props }, ref) => {
+    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">("loading")
+
+    // Reset status when src changes
+    React.useEffect(() => {
+      setStatus("loading")
+    }, [src])
+
+    if (!src || status === "error") {
+      return null
+    }
+
+    return (
+      <img
+        ref={ref}
+        alt={alt}
+        src={src}
+        className={cn(
+          "aspect-square h-full w-full object-cover absolute inset-0 z-10",
+          status === "loading" && "opacity-0",
+          className,
+        )}
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("error")}
+        {...props}
+      />
+    )
+  },
 )
 AvatarImage.displayName = "AvatarImage"
 
