@@ -45,6 +45,7 @@ type EventFeedItem = {
   metadata?: string
   createdAt: number
   userName?: string
+  avatarUrl?: string | null
   shareId?: string
   upCount: number
   downCount: number
@@ -1094,11 +1095,21 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
     <div className="p-3 rounded-lg border border-border bg-card shadow-sm space-y-2">
       {/* Main event row */}
       <div className="flex items-start gap-3">
-        <div
-          className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${getEventColor()}`}
-        >
-          {getEventIcon()}
-        </div>
+        {/* User avatar or event icon fallback */}
+        {event.avatarUrl ? (
+          <Avatar size="sm" className="shrink-0">
+            <AvatarImage src={event.avatarUrl} alt={event.userName || ""} />
+            <AvatarFallback>
+              {event.userName?.charAt(0).toUpperCase() || "?"}
+            </AvatarFallback>
+          </Avatar>
+        ) : (
+          <div
+            className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${getEventColor()}`}
+          >
+            {getEventIcon()}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <p className="text-sm leading-relaxed">
             <span className="font-semibold">{event.userName || "Someone"}</span>{" "}
@@ -1111,7 +1122,7 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
       </div>
 
       {/* Reactions and comments row */}
-      <div className="flex items-center gap-1 pl-10">
+      <div className="flex items-center gap-1 pl-9">
         <button
           type="button"
           onClick={() => handleReaction("up")}

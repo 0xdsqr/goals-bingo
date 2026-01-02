@@ -441,8 +441,21 @@ export const getEventFeed = query({
 
         if (!creatorOptIn) return null
 
-        // Get user name
+        // Get user profile for username and avatar
+        const profile = await ctx.db
+          .query("userProfiles")
+          .withIndex("by_user", (q) => q.eq("userId", event.userId))
+          .first()
+
+        // Get avatar URL if exists
+        let avatarUrl: string | null = null
+        if (profile?.avatarId) {
+          avatarUrl = await ctx.storage.getUrl(profile.avatarId)
+        }
+
+        // Fallback to user record for name
         const user = await ctx.db.get(event.userId)
+        const userName = profile?.username || user?.name || user?.email?.split("@")[0] || "Anonymous"
 
         // Get board shareId if board exists
         let shareId: string | undefined
@@ -469,7 +482,8 @@ export const getEventFeed = query({
 
         return {
           ...event,
-          userName: user?.name || user?.email || "Anonymous",
+          userName,
+          avatarUrl,
           shareId,
           upCount,
           downCount,
