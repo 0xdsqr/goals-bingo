@@ -260,6 +260,26 @@ export const create = mutation({
   },
 })
 
+export const update = mutation({
+  args: {
+    id: v.id("boards"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error("Not authenticated")
+    const board = await ctx.db.get(args.id)
+    if (!board || board.userId !== userId) throw new Error("Board not found")
+
+    await ctx.db.patch(args.id, {
+      ...(args.name !== undefined && { name: args.name }),
+      ...(args.description !== undefined && { description: args.description }),
+      updatedAt: Date.now(),
+    })
+  },
+})
+
 export const remove = mutation({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {

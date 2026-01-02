@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { useConvexAuth, useMutation, useQuery } from "convex/react"
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react"
 import { useCallback, useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
+import { Board } from "@/components/bingo/board"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { checkBingo } from "@/lib/types"
+import type { Goal } from "@/lib/types"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 
@@ -22,15 +23,19 @@ function BoardDetailPage() {
   })
   const updateGoal = useMutation(api.goals.update)
   const toggleGoal = useMutation(api.goals.toggleComplete)
+  const updateBoard = useMutation(api.boards.update)
   const removeBoard = useMutation(api.boards.remove)
   const generateShareLink = useMutation(api.boards.generateShareLink)
   const removeShareLink = useMutation(api.boards.removeShareLink)
+  const rankDifficultyAction = useAction(api.boards.rankDifficulty)
 
   const [showSignIn, setShowSignIn] = useState(false)
-  const [editingGoalId, setEditingGoalId] = useState<string | null>(null)
-  const [editText, setEditText] = useState("")
   const [isSharing, setIsSharing] = useState(false)
   const [showCopied, setShowCopied] = useState(false)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editName, setEditName] = useState("")
+  const [isRanking, setIsRanking] = useState(false)
+  const [difficultyRank, setDifficultyRank] = useState<string | null>(null)
 
   const handleShare = useCallback(async () => {
     if (!board) return
@@ -61,7 +66,7 @@ function BoardDetailPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">
@@ -85,7 +90,7 @@ function BoardDetailPage() {
 
   if (board === null) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">Board not found</p>
@@ -98,17 +103,14 @@ function BoardDetailPage() {
     )
   }
 
-  const sortedGoals = [...board.goals].sort((a, b) => a.position - b.position)
-  const hasBingo = checkBingo(
-    sortedGoals.map((g) => ({
-      id: g._id,
-      text: g.text,
-      position: g.position,
-      isCompleted: g.isCompleted,
-    })),
-    board.size,
-  )
-  const completedCount = sortedGoals.filter((g) => g.isCompleted).length
+  // Map Convex goals to local Goal type
+  const goals: Goal[] = board.goals.map((g) => ({
+    id: g._id,
+    text: g.text,
+    position: g.position,
+    isCompleted: g.isCompleted,
+    isFreeSpace: g.isFreeSpace,
+  }))
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this board?")) {
@@ -117,22 +119,54 @@ function BoardDetailPage() {
     }
   }
 
-  const handleStartEdit = (goalId: string, currentText: string) => {
-    setEditingGoalId(goalId)
-    setEditText(currentText)
+  const handleUpdateGoal = async (goalId: string, text: string) => {
+    await updateGoal({ id: goalId as Id<"goals">, text })
   }
 
-  const handleSaveEdit = async (goalId: Id<"goals">) => {
-    await updateGoal({ id: goalId, text: editText })
-    setEditingGoalId(null)
-    setEditText("")
+  const handleToggleGoal = async (goalId: string) => {
+    await toggleGoal({ id: goalId as Id<"goals"> })
+  }
+
+  const handleStartEditName = () => {
+    setEditName(board.name)
+    setIsEditingName(true)
+  }
+
+  const handleSaveName = async () => {
+    if (editName.trim() && editName !== board.name) {
+      await updateBoard({ id: board._id, name: editName.trim() })
+    }
+    setIsEditingName(false)
+  }
+
+  const handleRankDifficulty = async () => {
+    const goalsWithText = goals.filter((g) => g.text && !g.isFreeSpace)
+    if (goalsWithText.length === 0) {
+      setDifficultyRank("Add some goals first to get a difficulty ranking!")
+      return
+    }
+
+    setIsRanking(true)
+    setDifficultyRank(null)
+    try {
+      const result = await rankDifficultyAction({
+        goals: goalsWithText.map((g) => g.text),
+      })
+      setDifficultyRank(result.ranking || "Unable to rank at this time.")
+    } catch {
+      setDifficultyRank("Failed to get ranking. Please try again.")
+    } finally {
+      setIsRanking(false)
+    }
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <header className="flex items-center justify-between mb-8">
+    <div className="container mx-auto px-4 py-6 max-w-3xl">
+      <header className="flex items-center justify-between mb-6">
         <Link to="/boards">
-          <Button variant="ghost">&larr; Back</Button>
+          <Button variant="ghost" size="sm">
+            &larr; Back
+          </Button>
         </Link>
         <div className="flex items-center gap-2">
           {board.shareId ? (
@@ -166,103 +200,65 @@ function BoardDetailPage() {
       </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-center">{board.name}</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-center text-base">
+            {isEditingName ? (
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={handleSaveName}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveName()
+                  if (e.key === "Escape") setIsEditingName(false)
+                }}
+                className="w-full text-center bg-transparent border-b border-primary focus:outline-none"
+                ref={(el) => el?.focus()}
+              />
+            ) : (
+              <span
+                className="cursor-pointer hover:text-primary transition-colors"
+                onClick={handleStartEditName}
+                title="Click to edit"
+              >
+                {board.name}
+              </span>
+            )}
+          </CardTitle>
           {board.description && (
-            <p className="text-center text-muted-foreground">
+            <p className="text-center text-muted-foreground text-sm">
               {board.description}
             </p>
           )}
-          <div className="flex items-center justify-center gap-4 pt-2">
-            <span className="text-sm text-muted-foreground">
-              {completedCount}/{sortedGoals.length} completed
-            </span>
-            {hasBingo && (
-              <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-semibold animate-pulse">
-                BINGO!
-              </span>
-            )}
-          </div>
         </CardHeader>
-        <CardContent>
-          <div
-            className="grid gap-2"
-            style={{ gridTemplateColumns: `repeat(${board.size}, 1fr)` }}
-          >
-            {sortedGoals.map((goal) => {
-              const isEditing = editingGoalId === goal._id
-              const isEmpty = !goal.text
+        <CardContent className="pt-2">
+          <Board
+            goals={goals}
+            size={board.size}
+            onUpdateGoal={handleUpdateGoal}
+            onToggleGoal={handleToggleGoal}
+          />
 
-              return (
-                <div
-                  key={goal._id}
-                  className={`aspect-square rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all relative group border-2 hover:border-primary/50 ${
-                    goal.isCompleted
-                      ? "bg-green-500/20 border-green-500"
-                      : isEmpty
-                        ? "bg-muted/50 border-dashed border-muted-foreground/30"
-                        : "bg-card border-border"
-                  }`}
-                  onClick={() => {
-                    if (!isEditing) {
-                      if (isEmpty) {
-                        handleStartEdit(goal._id, "")
-                      } else {
-                        toggleGoal({ id: goal._id })
-                      }
-                    }
-                  }}
-                >
-                  {isEditing ? (
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onBlur={() => handleSaveEdit(goal._id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSaveEdit(goal._id)
-                        }
-                        if (e.key === "Escape") {
-                          setEditingGoalId(null)
-                        }
-                      }}
-                      autoFocus
-                      className="w-full h-full bg-transparent text-center text-sm resize-none focus:outline-none"
-                      placeholder="Enter goal..."
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <>
-                      <span
-                        className={`text-xs sm:text-sm text-center break-words line-clamp-4 ${
-                          isEmpty ? "text-muted-foreground italic" : ""
-                        }`}
-                      >
-                        {goal.text || "Click to add"}
-                      </span>
-                      {!isEmpty && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleStartEdit(goal._id, goal.text)
-                          }}
-                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs p-1 hover:bg-accent rounded"
-                        >
-                          Edit
-                        </button>
-                      )}
-                      {goal.isCompleted && (
-                        <span className="absolute bottom-1 right-1 text-green-500 font-bold">
-                          ✓
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-              )
-            })}
+          {/* AI Difficulty Section */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex justify-end">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleRankDifficulty}
+                disabled={isRanking}
+              >
+                {isRanking ? "Analyzing..." : "AI Difficulty"}
+              </Button>
+            </div>
+            {difficultyRank && (
+              <div className="mt-3 p-3 bg-muted rounded-lg">
+                <p className="text-xs font-medium mb-1">AI Analysis:</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                  {difficultyRank}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
