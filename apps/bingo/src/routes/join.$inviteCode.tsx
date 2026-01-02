@@ -60,9 +60,9 @@ function JoinCommunityPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold mb-2">Join a Private Group</h2>
+            <h2 className="text-xl font-semibold mb-2">Join a Private Community</h2>
             <p className="text-muted-foreground mb-6">
-              Sign in to join this group and see member activity.
+              Sign in to join this community and see member activity.
             </p>
             <Button onClick={() => setShowSignIn(true)}>Sign in to Join</Button>
             <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
@@ -86,11 +86,11 @@ function JoinCommunityPage() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold mb-2">Join Group</h2>
+                <h2 className="text-xl font-semibold mb-2">Join Community</h2>
                 <p className="text-muted-foreground mb-6">
-                  You've been invited to join a private group.
+                  You've been invited to join a private community.
                 </p>
-                <Button onClick={handleJoin}>Join Group</Button>
+                <Button onClick={handleJoin}>Join Community</Button>
               </>
             )}
 
@@ -111,7 +111,7 @@ function JoinCommunityPage() {
                     />
                   </svg>
                 </div>
-                <p className="text-muted-foreground">Joining group...</p>
+                <p className="text-muted-foreground">Joining community...</p>
               </>
             )}
 
@@ -135,7 +135,7 @@ function JoinCommunityPage() {
                 <h2 className="text-xl font-semibold mb-2 text-green-500">
                   Joined!
                 </h2>
-                <p className="text-muted-foreground">Redirecting to group...</p>
+                <p className="text-muted-foreground">Redirecting to community...</p>
               </>
             )}
 

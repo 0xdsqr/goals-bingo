@@ -658,7 +658,7 @@ function CommunitySection({
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                My Groups
+                My Communities
               </button>
             </div>
           )}
@@ -776,10 +776,10 @@ function CommunitiesList({ onCreateNew }: { onCreateNew: () => void }) {
           </svg>
         </div>
         <p className="text-sm text-muted-foreground mb-3">
-          No private groups yet
+          No private communities yet
         </p>
         <Button size="sm" variant="outline" onClick={onCreateNew}>
-          Create a Group
+          Create a Community
         </Button>
       </div>
     )
@@ -849,11 +849,11 @@ function CreateCommunityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Private Group</DialogTitle>
+          <DialogTitle>Create Private Community</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="community-name">Group Name</Label>
+            <Label htmlFor="community-name">Community Name</Label>
             <Input
               id="community-name"
               value={name}
@@ -872,7 +872,7 @@ function CreateCommunityDialog({
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={!name.trim() || isCreating}>
-            {isCreating ? "Creating..." : "Create Group"}
+            {isCreating ? "Creating..." : "Create Community"}
           </Button>
         </DialogFooter>
       </DialogContent>

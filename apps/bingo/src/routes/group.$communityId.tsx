@@ -64,9 +64,9 @@ function CommunityPage() {
       <div className="container mx-auto px-4 py-6 max-w-3xl">
         <Card>
           <CardContent className="py-12 text-center">
-            <h2 className="text-xl font-semibold mb-2">Group not found</h2>
+            <h2 className="text-xl font-semibold mb-2">Community not found</h2>
             <p className="text-muted-foreground mb-4">
-              You may not be a member of this group, or it may have been
+              You may not be a member of this community, or it may have been
               deleted.
             </p>
             <Link to="/">
@@ -90,7 +90,7 @@ function CommunityPage() {
   }
 
   const handleLeave = async () => {
-    if (confirm("Leave this group?")) {
+    if (confirm("Leave this community?")) {
       await leaveCommunity({ communityId: communityId as Id<"communities"> })
       window.location.href = "/"
     }
@@ -99,7 +99,7 @@ function CommunityPage() {
   const handleDelete = async () => {
     if (
       confirm(
-        "Delete this group? This cannot be undone and will remove all members.",
+        "Delete this community? This cannot be undone and will remove all members.",
       )
     ) {
       await deleteCommunity({ communityId: communityId as Id<"communities"> })
@@ -250,7 +250,7 @@ function CommunityPage() {
                 onClick={handleDelete}
                 className="w-full"
               >
-                Delete Group
+                Delete Community
               </Button>
             ) : (
               <Button
@@ -259,7 +259,7 @@ function CommunityPage() {
                 onClick={handleLeave}
                 className="w-full"
               >
-                Leave Group
+                Leave Community
               </Button>
             )}
           </DialogFooter>
