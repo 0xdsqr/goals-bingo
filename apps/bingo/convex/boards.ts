@@ -427,7 +427,8 @@ export const getEventFeed = query({
       }),
     )
 
-    return enrichedEvents.filter(Boolean).slice(0, 20)
+    // Filter out voided events and nulls
+    return enrichedEvents.filter((e) => e && !e.voidedAt).slice(0, 20)
   },
 })
 
@@ -441,6 +442,7 @@ export const createEventFeedEntry = internalMutation({
       v.literal("board_completed"),
     ),
     boardId: v.optional(v.id("boards")),
+    goalId: v.optional(v.id("goals")),
     boardName: v.string(),
   },
   handler: async (ctx, args) => {
@@ -456,9 +458,32 @@ export const createEventFeedEntry = internalMutation({
       userId: args.userId,
       eventType: args.eventType,
       boardId: args.boardId,
+      goalId: args.goalId,
       boardName: args.boardName,
       createdAt: Date.now(),
     })
+  },
+})
+
+// Internal function to void event when goal is uncompleted
+export const voidGoalEvent = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+  },
+  handler: async (ctx, args) => {
+    // Find the most recent goal_completed event for this goal
+    const events = await ctx.db
+      .query("eventFeed")
+      .withIndex("by_goal", (q) => q.eq("goalId", args.goalId))
+      .collect()
+
+    // Void all non-voided events for this goal
+    const now = Date.now()
+    for (const event of events) {
+      if (!event.voidedAt && event.eventType === "goal_completed") {
+        await ctx.db.patch(event._id, { voidedAt: now })
+      }
+    }
   },
 })
 

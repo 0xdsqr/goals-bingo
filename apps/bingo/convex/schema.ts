@@ -54,7 +54,11 @@ export default defineSchema({
       v.literal("board_completed"),
     ),
     boardId: v.optional(v.id("boards")),
+    goalId: v.optional(v.id("goals")), // Track which goal for undo support
     boardName: v.string(),
     createdAt: v.number(),
-  }).index("by_created", ["createdAt"]),
+    voidedAt: v.optional(v.number()), // Set when goal is uncompleted
+  })
+    .index("by_created", ["createdAt"])
+    .index("by_goal", ["goalId"]),
 })

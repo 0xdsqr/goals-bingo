@@ -65,6 +65,7 @@ export const update = mutation({
               userId,
               eventType: "board_completed",
               boardId: goal.boardId,
+              goalId: args.id,
               boardName: board.name,
             },
           )
@@ -76,11 +77,19 @@ export const update = mutation({
               userId,
               eventType: "goal_completed",
               boardId: goal.boardId,
+              goalId: args.id,
               boardName: board.name,
             },
           )
         }
       }
+    }
+
+    // Void event if goal was uncompleted
+    if (!args.isCompleted && wasCompleted) {
+      await ctx.scheduler.runAfter(0, internal.boards.voidGoalEvent, {
+        goalId: args.id,
+      })
     }
   },
 })
@@ -142,6 +151,7 @@ export const toggleComplete = mutation({
               userId,
               eventType: "board_completed",
               boardId: goal.boardId,
+              goalId: args.id,
               boardName: board.name,
             },
           )
@@ -153,11 +163,17 @@ export const toggleComplete = mutation({
               userId,
               eventType: "goal_completed",
               boardId: goal.boardId,
+              goalId: args.id,
               boardName: board.name,
             },
           )
         }
       }
+    } else {
+      // Void event if goal was uncompleted
+      await ctx.scheduler.runAfter(0, internal.boards.voidGoalEvent, {
+        goalId: args.id,
+      })
     }
   },
 })
