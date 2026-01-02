@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Authenticated, Unauthenticated, useQuery } from "convex/react"
 import { useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
+import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "../../convex/_generated/api"
@@ -28,20 +29,7 @@ function BoardsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <header className="flex items-center justify-between mb-6">
-        <Link to="/">
-          <h1 className="text-2xl font-bold text-foreground border-b-2 border-dotted border-primary pb-1">
-            Goals Bingo
-          </h1>
-        </Link>
-        <Authenticated>
-          <Link to="/">
-            <Button variant="outline" size="sm">
-              + New Board
-            </Button>
-          </Link>
-        </Authenticated>
-      </header>
+      <Header onSignInClick={() => setShowSignIn(true)} showMyBoards={false} />
 
       <Unauthenticated>
         <Card>

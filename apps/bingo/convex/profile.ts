@@ -119,7 +119,7 @@ export const getProfile = query({
 
     return {
       userId: args.userId,
-      username: profile?.username || user?.name || user?.email?.split("@")[0],
+      username: profile?.username || user?.name || "Anonymous",
       avatarUrl,
     }
   },

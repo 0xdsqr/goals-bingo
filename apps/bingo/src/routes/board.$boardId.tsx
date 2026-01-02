@@ -3,6 +3,7 @@ import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react"
 import { useCallback, useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
 import { Board } from "@/components/bingo/board"
+import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Goal } from "@/lib/types"
@@ -242,10 +243,25 @@ function BoardDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <header className="flex items-center justify-between mb-6">
+      <Header onSignInClick={() => setShowSignIn(true)} />
+
+      {/* Board sub-header */}
+      <div className="flex items-center justify-between mb-4 -mt-2">
         <Link to="/boards">
-          <Button variant="ghost" size="sm">
-            &larr; Back
+          <Button variant="ghost" size="sm" className="h-7 px-2">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
           </Button>
         </Link>
         <div className="flex items-center gap-2">
@@ -277,7 +293,7 @@ function BoardDetailPage() {
             Delete
           </Button>
         </div>
-      </header>
+      </div>
 
       <Card>
         <CardHeader className="pb-2">

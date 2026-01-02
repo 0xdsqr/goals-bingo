@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Authenticated, Unauthenticated, useMutation } from "convex/react"
 import { useState } from "react"
 import { SignInDialog } from "@/components/auth/sign-in-dialog"
+import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { api } from "../../convex/_generated/api"
@@ -41,7 +42,9 @@ function JoinCommunityPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-md min-h-screen flex items-center justify-center">
+    <div className="container mx-auto px-4 py-6 max-w-md min-h-screen flex flex-col">
+      <Header onSignInClick={() => setShowSignIn(true)} />
+      <div className="flex-1 flex items-center justify-center">
       <Card className="w-full">
         <CardContent className="py-8 text-center">
           <Unauthenticated>
@@ -173,6 +176,7 @@ function JoinCommunityPage() {
           </Authenticated>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }

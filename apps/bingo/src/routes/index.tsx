@@ -951,7 +951,7 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
       case "user_joined":
         return (
           <>
-            joined the community! <span className="text-primary">Welcome!</span>
+            joined the community! <span className="text-primary">Welcome</span> <span role="img" aria-label="wave">👋</span>
           </>
         )
       default:

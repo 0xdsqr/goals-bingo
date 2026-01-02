@@ -478,9 +478,9 @@ export const getEventFeed = query({
           avatarUrl = await ctx.storage.getUrl(profile.avatarId)
         }
 
-        // Fallback to user record for name
+        // Fallback to user record for name - never expose email
         const user = await ctx.db.get(event.userId)
-        const userName = profile?.username || user?.name || user?.email?.split("@")[0] || "Anonymous"
+        const userName = profile?.username || user?.name || "Anonymous"
 
         // Get board shareId if board exists
         let shareId: string | undefined

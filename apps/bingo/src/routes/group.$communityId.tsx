@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useMutation, useQuery } from "convex/react"
 import { useState } from "react"
+import { SignInDialog } from "@/components/auth/sign-in-dialog"
+import { Header } from "@/components/layout/header"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -48,6 +51,7 @@ function CommunityPage() {
   const regenerateInvite = useMutation(api.social.regenerateInviteCode)
 
   const [showInvite, setShowInvite] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -78,8 +82,25 @@ function CommunityPage() {
     )
   }
 
-  const handleCopyInvite = async () => {
+  const handleShareInvite = async () => {
     const inviteUrl = `${window.location.origin}/join/${community.inviteCode}`
+    
+    // Use native share on mobile if available
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Join ${community.name}`,
+          text: `Join my community "${community.name}" on Goals Bingo!`,
+          url: inviteUrl,
+        })
+        return
+      } catch (e) {
+        // User cancelled or share failed, fall through to clipboard
+        if ((e as Error).name === "AbortError") return
+      }
+    }
+    
+    // Fallback to clipboard
     await navigator.clipboard.writeText(inviteUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -109,35 +130,39 @@ function CommunityPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <header className="flex items-center justify-between mb-6">
-        <Link to="/">
-          <Button variant="ghost" size="sm">
-            <svg
-              className="w-4 h-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back
-          </Button>
-        </Link>
-        <h1 className="text-lg font-bold text-foreground border-b-2 border-dotted border-primary pb-1">
-          {community.name}
-        </h1>
+      <Header onSignInClick={() => setShowSignIn(true)} />
+
+      {/* Community sub-header */}
+      <div className="flex items-center justify-between mb-4 -mt-2">
+        <div className="flex items-center gap-2">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="h-7 px-2">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </Button>
+          </Link>
+          <h2 className="text-lg font-bold text-foreground">
+            {community.name}
+          </h2>
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowInvite(true)}
+            onClick={handleShareInvite}
           >
-            Invite
+            {copied ? "Copied!" : "Invite"}
           </Button>
           <Button
             variant="ghost"
@@ -160,7 +185,7 @@ function CommunityPage() {
             </svg>
           </Button>
         </div>
-      </header>
+      </div>
 
       {/* Feed */}
       <Card>
@@ -203,7 +228,7 @@ function CommunityPage() {
                   value={`${window.location.origin}/join/${community.inviteCode}`}
                   className="font-mono text-sm"
                 />
-                <Button onClick={handleCopyInvite}>
+                <Button onClick={handleShareInvite}>
                   {copied ? "Copied!" : "Copy"}
                 </Button>
               </div>
@@ -265,6 +290,8 @@ function CommunityPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
   )
 }
@@ -302,7 +329,7 @@ function EventCard({ event }: { event: EventFeedItem }) {
       case "bingo":
         return `got BINGO on "${event.boardName}"!`
       case "user_joined":
-        return "joined the community!"
+        return "joined the community! 👋"
       default:
         return "did something"
     }
