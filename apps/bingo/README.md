@@ -2,14 +2,6 @@
 
 A goal tracking app where you fill out a 5x5 bingo board with your yearly goals. Complete goals, get BINGO!
 
-## Tech Stack
-
-- **Frontend**: TanStack Start, React, Vite, Tailwind CSS
-- **Backend**: Convex (real-time database + serverless functions)
-- **Auth**: Convex Auth (email OTP via Resend)
-- **AI**: OpenRouter (GPT-4o-mini for image extraction, GPT-3.5 for difficulty ranking)
-- **Analytics**: Vercel Analytics
-
 ## Features
 
 - **Bingo Board** - 5x5 grid to track 24 goals + free space
@@ -53,6 +45,12 @@ A goal tracking app where you fill out a 5x5 bingo board with your yearly goals.
 From the repo root:
 
 ```bash
-nix develop
-bun run dev
+nix run .#dev
+```
+
+Or separately:
+
+```bash
+nix run .#convex  # Start Convex backend
+nix run .#ui      # Start UI
 ```
