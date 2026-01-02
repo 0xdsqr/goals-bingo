@@ -28,6 +28,7 @@ type EventFeedItem = {
     | "streak_reset"
     | "streak_milestone"
     | "bingo"
+    | "user_joined"
   boardId?: string
   boardName: string
   goalText?: string
@@ -290,14 +291,17 @@ function HomePage() {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={handleImportFromPhoto}
-                    className="hidden"
+                    className="sr-only"
+                    id="photo-upload"
                   />
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImporting}
+                    type="button"
                   >
                     {isImporting ? "Importing..." : "Import Photo"}
                   </Button>
@@ -462,6 +466,12 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
           <>
             got <span className="text-primary font-bold">BINGO!</span> on{" "}
             {getBoardNameElement()}
+          </>
+        )
+      case "user_joined":
+        return (
+          <>
+            joined the community! <span className="text-primary">Welcome!</span>
           </>
         )
       default:

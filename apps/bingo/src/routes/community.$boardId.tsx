@@ -51,6 +51,9 @@ function CommunityBoardPage() {
     position: g.position,
     isCompleted: g.isCompleted,
     isFreeSpace: g.isFreeSpace,
+    isStreakGoal: g.isStreakGoal,
+    streakTargetDays: g.streakTargetDays,
+    streakStartDate: g.streakStartDate,
   }))
 
   const completedGoals = goals.filter((g) => g.isCompleted).length

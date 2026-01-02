@@ -372,6 +372,16 @@ export const toggleEventFeedOptIn = mutation({
         userId,
         optedInAt: Date.now(),
       })
+
+      // Welcome event for first-time community join
+      const user = await ctx.db.get(userId)
+      await ctx.db.insert("eventFeed", {
+        userId,
+        eventType: "user_joined",
+        boardName: user?.name || user?.email || "Someone",
+        createdAt: Date.now(),
+      })
+
       return { isOptedIn: true }
     }
   },
@@ -464,6 +474,7 @@ export const createEventFeedEntry = internalMutation({
       v.literal("streak_reset"),
       v.literal("streak_milestone"),
       v.literal("bingo"),
+      v.literal("user_joined"),
     ),
     boardId: v.optional(v.id("boards")),
     goalId: v.optional(v.id("goals")),

@@ -56,6 +56,7 @@ export default defineSchema({
       v.literal("streak_reset"),
       v.literal("streak_milestone"), // 7d, 30d, 60d, 90d milestones
       v.literal("bingo"), // Got a BINGO line!
+      v.literal("user_joined"), // First time joining community
     ),
     boardId: v.optional(v.id("boards")),
     goalId: v.optional(v.id("goals")),
