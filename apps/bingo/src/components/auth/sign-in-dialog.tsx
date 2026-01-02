@@ -1,89 +1,89 @@
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useAuthActions } from "@convex-dev/auth/react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface SignInDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-type Step = "choose" | "email" | { email: string };
+type Step = "choose" | "email" | { email: string }
 
 export function SignInDialog({
   open,
   onOpenChange,
   onSuccess,
 }: SignInDialogProps) {
-  const { signIn } = useAuthActions();
-  const [step, setStep] = useState<Step>("choose");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { signIn } = useAuthActions()
+  const [step, setStep] = useState<Step>("choose")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const reset = () => {
-    setStep("choose");
-    setError(null);
-  };
+    setStep("choose")
+    setError(null)
+  }
 
   const handleClose = (open: boolean) => {
-    if (!open) reset();
-    onOpenChange(open);
-  };
+    if (!open) reset()
+    onOpenChange(open)
+  }
 
   const handleAnonymous = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      await signIn("anonymous");
-      onSuccess?.();
-      handleClose(false);
+      await signIn("anonymous")
+      onSuccess?.()
+      handleClose(false)
     } catch {
-      setError("Failed to sign in");
+      setError("Failed to sign in")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
     try {
-      await signIn("resend-otp", formData);
-      setStep({ email });
+      await signIn("resend-otp", formData)
+      setStep({ email })
     } catch {
-      setError("Failed to send code");
+      setError("Failed to send code")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleCodeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    const formData = new FormData(e.currentTarget);
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    const formData = new FormData(e.currentTarget)
     try {
-      await signIn("resend-otp", formData);
-      onSuccess?.();
-      handleClose(false);
+      await signIn("resend-otp", formData)
+      onSuccess?.()
+      handleClose(false)
     } catch {
-      setError("Invalid code");
+      setError("Invalid code")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -192,5 +192,5 @@ export function SignInDialog({
         {error && <p className="text-sm text-destructive mt-2">{error}</p>}
       </DialogContent>
     </Dialog>
-  );
+  )
 }
