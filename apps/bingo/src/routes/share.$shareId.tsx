@@ -79,6 +79,13 @@ function SharedBoardPage() {
               {progress}% complete
             </span>
           </CardTitle>
+          <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+            <span>{board.year}</span>
+            <span>·</span>
+            <span>
+              Created {new Date(board.createdAt).toLocaleDateString()}
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="pt-2">
           <Board
