@@ -1,6 +1,19 @@
 import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import type { Id } from "./_generated/dataModel"
+import { mutation, query, type QueryCtx } from "./_generated/server"
+
+// Helper to get display name for a user (prefers profile username, never exposes email)
+async function getDisplayName(ctx: QueryCtx, userId: Id<"users">): Promise<string> {
+  const profile = await ctx.db
+    .query("userProfiles")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .first()
+  if (profile?.username) return profile.username
+  
+  const user = await ctx.db.get(userId)
+  return user?.name || "Anonymous"
+}
 
 // Toggle reaction (up/down) on an event
 export const toggleReaction = mutation({
@@ -114,10 +127,10 @@ export const getComments = query({
     // Enrich with user names
     const enriched = await Promise.all(
       comments.map(async (comment) => {
-        const user = await ctx.db.get(comment.userId)
+        const userName = await getDisplayName(ctx, comment.userId)
         return {
           ...comment,
-          userName: user?.name || user?.email || "Anonymous",
+          userName,
         }
       }),
     )
@@ -232,10 +245,10 @@ export const getCommunity = query({
     // Get member details
     const memberDetails = await Promise.all(
       members.map(async (m) => {
-        const user = await ctx.db.get(m.userId)
+        const userName = await getDisplayName(ctx, m.userId)
         return {
           ...m,
-          userName: user?.name || user?.email || "Anonymous",
+          userName,
         }
       }),
     )
@@ -399,9 +412,10 @@ export const getCommunityFeed = query({
             .withIndex("by_event", (q) => q.eq("eventId", event._id))
             .collect()
 
+          const userName = await getDisplayName(ctx, event.userId)
           return {
             ...event,
-            userName: user?.name || user?.email || "Anonymous",
+            userName,
             shareId,
             upCount,
             downCount,

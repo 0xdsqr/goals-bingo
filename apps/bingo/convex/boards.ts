@@ -2,7 +2,20 @@ import { getAuthUserId } from "@convex-dev/auth/server"
 import { v } from "convex/values"
 import OpenAI from "openai"
 import { internal } from "./_generated/api"
-import { action, internalMutation, mutation, query } from "./_generated/server"
+import type { Id } from "./_generated/dataModel"
+import { action, internalMutation, mutation, query, type QueryCtx } from "./_generated/server"
+
+// Helper to get display name for a user (prefers profile username, never exposes email)
+async function getDisplayName(ctx: QueryCtx, userId: Id<"users">): Promise<string> {
+  const profile = await ctx.db
+    .query("userProfiles")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .first()
+  if (profile?.username) return profile.username
+  
+  const user = await ctx.db.get(userId)
+  return user?.name || "Anonymous"
+}
 
 export const list = query({
   args: {},
@@ -118,12 +131,12 @@ export const getSharedBoard = query({
       .collect()
 
     // Get owner name
-    const owner = await ctx.db.get(board.userId)
+    const ownerName = await getDisplayName(ctx, board.userId)
 
     return {
       ...board,
       goals,
-      ownerName: owner?.name || owner?.email || "Anonymous",
+      ownerName,
     }
   },
 })
@@ -157,10 +170,10 @@ export const getCommunityBoards = query({
     // Enrich with owner names
     const enrichedBoards = await Promise.all(
       communityBoards.map(async (board) => {
-        const owner = await ctx.db.get(board.userId)
+        const ownerName = await getDisplayName(ctx, board.userId)
         return {
           ...board,
-          ownerName: owner?.name || owner?.email || "Anonymous",
+          ownerName,
         }
       }),
     )
@@ -201,12 +214,12 @@ export const getCommunityBoardWithGoals = query({
       .withIndex("by_board", (q) => q.eq("boardId", board._id))
       .collect()
 
-    const owner = await ctx.db.get(board.userId)
+    const ownerName = await getDisplayName(ctx, board.userId)
 
     return {
       ...board,
       goals,
-      ownerName: owner?.name || owner?.email || "Anonymous",
+      ownerName,
     }
   },
 })
@@ -293,12 +306,18 @@ export const create = mutation({
         optedInAt: now,
       })
 
-      // Welcome event for first-time community join
+      // Welcome event for first-time community join - use profile username if available
+      const profile = await ctx.db
+        .query("userProfiles")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .first()
       const user = await ctx.db.get(userId)
+      const displayName = profile?.username || user?.name || "Someone"
+      
       await ctx.db.insert("eventFeed", {
         userId,
         eventType: "user_joined",
-        boardName: user?.name || user?.email || "Someone",
+        boardName: displayName,
         createdAt: now,
       })
     }
@@ -395,12 +414,18 @@ export const toggleEventFeedOptIn = mutation({
         optedInAt: Date.now(),
       })
 
-      // Welcome event for first-time community join
+      // Welcome event for first-time community join - use profile username if available
+      const profile = await ctx.db
+        .query("userProfiles")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .first()
       const user = await ctx.db.get(userId)
+      const displayName = profile?.username || user?.name || "Someone"
+      
       await ctx.db.insert("eventFeed", {
         userId,
         eventType: "user_joined",
-        boardName: user?.name || user?.email || "Someone",
+        boardName: displayName,
         createdAt: Date.now(),
       })
 

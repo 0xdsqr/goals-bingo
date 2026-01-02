@@ -709,8 +709,8 @@ function GoalEditDialog({
               {goalType === "streak" && (
                 <div className="space-y-3 pt-2 border-t">
                   <div className="space-y-2">
-                    <Label>Target days</Label>
-                    <div className="flex gap-2">
+                    <Label htmlFor="streak-target">Target days</Label>
+                    <div className="flex gap-2 flex-wrap">
                       {[30, 60, 90].map((days) => (
                         <Button
                           key={days}
@@ -728,16 +728,26 @@ function GoalEditDialog({
                           {days}
                         </Button>
                       ))}
-                      <Input
-                        type="number"
-                        value={streakTargetDays}
-                        onChange={(e) =>
-                          setStreakTargetDays(Number(e.target.value) || 30)
-                        }
-                        className="w-20"
-                        min={1}
-                      />
                     </div>
+                    <Input
+                      id="streak-target"
+                      type="number"
+                      value={streakTargetDays}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val === "") {
+                          setStreakTargetDays(1)
+                        } else {
+                          const num = parseInt(val, 10)
+                          if (!isNaN(num) && num >= 1) {
+                            setStreakTargetDays(num)
+                          }
+                        }
+                      }}
+                      className="w-full"
+                      min={1}
+                      placeholder="Enter days..."
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -765,8 +775,8 @@ function GoalEditDialog({
               {goalType === "progress" && (
                 <div className="space-y-3 pt-2 border-t">
                   <div className="space-y-2">
-                    <Label>Target count</Label>
-                    <div className="flex gap-2">
+                    <Label htmlFor="progress-target">Target count</Label>
+                    <div className="flex gap-2 flex-wrap">
                       {[3, 5, 10, 12].map((count) => (
                         <Button
                           key={count}
@@ -784,16 +794,27 @@ function GoalEditDialog({
                           {count}
                         </Button>
                       ))}
-                      <Input
-                        type="number"
-                        value={progressTarget}
-                        onChange={(e) =>
-                          setProgressTarget(Number(e.target.value) || 5)
-                        }
-                        className="w-20"
-                        min={1}
-                      />
                     </div>
+                    <Input
+                      id="progress-target"
+                      type="number"
+                      value={progressTarget}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        // Allow empty string while typing, but ensure min of 1 on blur
+                        if (val === "") {
+                          setProgressTarget(1)
+                        } else {
+                          const num = parseInt(val, 10)
+                          if (!isNaN(num) && num >= 1) {
+                            setProgressTarget(num)
+                          }
+                        }
+                      }}
+                      className="w-full"
+                      min={1}
+                      placeholder="Enter a number..."
+                    />
                     <p className="text-xs text-muted-foreground">
                       How many times to complete this goal
                     </p>
