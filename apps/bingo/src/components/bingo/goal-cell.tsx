@@ -178,7 +178,7 @@ export function GoalCell({
           }}
         >
           {/* Circular progress indicator */}
-          <div className="relative w-8 h-8 sm:w-10 sm:h-10 mb-0.5">
+          <div className="relative w-7 h-7 sm:w-9 sm:h-9 shrink-0">
             <svg
               className="w-full h-full -rotate-90"
               viewBox="0 0 36 36"
@@ -206,17 +206,17 @@ export function GoalCell({
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[6px] sm:text-[8px] font-bold font-mono">
+            <span className="absolute inset-0 flex items-center justify-center text-[5px] sm:text-[7px] font-bold font-mono">
               {liveTime}
             </span>
           </div>
 
-          <span className="text-[8px] sm:text-[10px] text-center break-words line-clamp-2 leading-tight">
+          <span className="text-[7px] sm:text-[9px] text-center break-words line-clamp-2 leading-tight flex-1 min-h-0">
             {goal.text}
           </span>
 
-          <span className="text-[7px] sm:text-[8px] text-muted-foreground">
-            {currentDays}/{targetDays} days
+          <span className="text-[6px] sm:text-[7px] text-muted-foreground shrink-0">
+            {currentDays}/{targetDays}d
           </span>
 
           {/* Streak menu overlay */}
