@@ -104,13 +104,7 @@ export function SignInDialog({
 
         {step === "choose" && (
           <div className="flex flex-col gap-3 mt-4">
-            <Button
-              onClick={handleAnonymous}
-              disabled={isLoading}
-              variant="outline"
-            >
-              {isLoading ? "Signing in..." : "Continue as guest"}
-            </Button>
+            <Button onClick={() => setStep("email")}>Sign in with email</Button>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -121,7 +115,13 @@ export function SignInDialog({
                 </span>
               </div>
             </div>
-            <Button onClick={() => setStep("email")}>Sign in with email</Button>
+            <Button
+              onClick={handleAnonymous}
+              disabled={isLoading}
+              variant="outline"
+            >
+              {isLoading ? "Signing in..." : "Continue as guest"}
+            </Button>
           </div>
         )}
 
