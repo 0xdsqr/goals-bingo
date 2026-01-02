@@ -4,6 +4,10 @@ export interface Goal {
   position: number
   isCompleted: boolean
   isFreeSpace?: boolean
+  // Streak goal fields
+  isStreakGoal?: boolean
+  streakTargetDays?: number
+  streakStartDate?: number
 }
 
 export interface Board {

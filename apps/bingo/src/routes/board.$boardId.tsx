@@ -23,6 +23,7 @@ function BoardDetailPage() {
   })
   const updateGoal = useMutation(api.goals.update)
   const toggleGoal = useMutation(api.goals.toggleComplete)
+  const resetStreak = useMutation(api.goals.resetStreak)
   const updateBoard = useMutation(api.boards.update)
   const removeBoard = useMutation(api.boards.remove)
   const generateShareLink = useMutation(api.boards.generateShareLink)
@@ -130,6 +131,9 @@ function BoardDetailPage() {
     position: g.position,
     isCompleted: g.isCompleted,
     isFreeSpace: g.isFreeSpace,
+    isStreakGoal: g.isStreakGoal,
+    streakTargetDays: g.streakTargetDays,
+    streakStartDate: g.streakStartDate,
   }))
 
   const handleDelete = async () => {
@@ -143,8 +147,26 @@ function BoardDetailPage() {
     await updateGoal({ id: goalId as Id<"goals">, text })
   }
 
+  const handleUpdateStreak = async (
+    goalId: string,
+    isStreakGoal: boolean,
+    streakTargetDays?: number,
+    streakStartDate?: number,
+  ) => {
+    await updateGoal({
+      id: goalId as Id<"goals">,
+      isStreakGoal,
+      streakTargetDays,
+      streakStartDate,
+    })
+  }
+
   const handleToggleGoal = async (goalId: string) => {
     await toggleGoal({ id: goalId as Id<"goals"> })
+  }
+
+  const handleResetStreak = async (goalId: string) => {
+    await resetStreak({ id: goalId as Id<"goals"> })
   }
 
   const handleStartEditName = () => {
@@ -178,7 +200,11 @@ function BoardDetailPage() {
       // Extract difficulty level and save to board
       const difficultyMatch = ranking.match(/\b(Easy|Medium|Hard|Expert)\b/i)
       if (difficultyMatch) {
-        await updateBoard({ id: board._id, difficulty: difficultyMatch[1] })
+        await updateBoard({
+          id: board._id,
+          difficulty: difficultyMatch[1],
+          difficultySummary: ranking,
+        })
       }
     } catch {
       setDifficultyRank("Failed to get ranking. Please try again.")
@@ -276,7 +302,9 @@ function BoardDetailPage() {
             goals={goals}
             size={board.size}
             onUpdateGoal={handleUpdateGoal}
+            onUpdateStreak={handleUpdateStreak}
             onToggleGoal={handleToggleGoal}
+            onResetStreak={handleResetStreak}
           />
 
           {/* AI Difficulty Section */}
@@ -291,11 +319,11 @@ function BoardDetailPage() {
                 {isRanking ? "Analyzing..." : "AI Difficulty"}
               </Button>
             </div>
-            {difficultyRank && (
+            {(difficultyRank || board.difficultySummary) && (
               <div className="mt-3 p-3 bg-muted rounded-lg">
                 <p className="text-xs font-medium mb-1">AI Analysis:</p>
                 <p className="text-xs text-muted-foreground whitespace-pre-wrap">
-                  {difficultyRank}
+                  {difficultyRank || board.difficultySummary}
                 </p>
               </div>
             )}

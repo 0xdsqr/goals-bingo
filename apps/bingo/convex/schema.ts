@@ -13,6 +13,7 @@ export default defineSchema({
     year: v.number(), // Year the board is for (e.g., 2025, 2026)
     shareId: v.optional(v.string()), // Unique ID for public sharing
     difficulty: v.optional(v.string()), // AI difficulty rating (Easy/Medium/Hard/Expert)
+    difficultySummary: v.optional(v.string()), // AI difficulty analysis
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -28,6 +29,10 @@ export default defineSchema({
     isCompleted: v.boolean(),
     isFreeSpace: v.optional(v.boolean()),
     completedAt: v.optional(v.number()),
+    // Streak goal fields
+    isStreakGoal: v.optional(v.boolean()),
+    streakTargetDays: v.optional(v.number()), // e.g., 30, 60, 90
+    streakStartDate: v.optional(v.number()), // timestamp when streak started
     createdAt: v.number(),
     updatedAt: v.number(),
   })

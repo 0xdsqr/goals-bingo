@@ -96,6 +96,45 @@ function BoardsPage() {
                           </span>
                         </CardTitle>
                       </CardHeader>
+                      <CardContent className="pt-0 pb-3 px-4">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>
+                            {new Date(board.createdAt).toLocaleDateString(
+                              "en-US",
+                              { month: "short", day: "numeric" },
+                            )}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {board.difficulty && (
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  board.difficulty === "Easy"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : board.difficulty === "Medium"
+                                      ? "bg-yellow-500/20 text-yellow-400"
+                                      : board.difficulty === "Hard"
+                                        ? "bg-orange-500/20 text-orange-400"
+                                        : board.difficulty === "Expert"
+                                          ? "bg-red-500/20 text-red-400"
+                                          : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {board.difficulty}
+                              </span>
+                            )}
+                            <span className="font-medium">
+                              {board.completionPercent}%
+                            </span>
+                          </div>
+                        </div>
+                        {/* Progress bar */}
+                        <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{ width: `${board.completionPercent}%` }}
+                          />
+                        </div>
+                      </CardContent>
                     </Card>
                   ))}
                 </div>

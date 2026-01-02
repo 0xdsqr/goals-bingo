@@ -7,7 +7,14 @@ interface BoardProps {
   goals: Goal[]
   size: number
   onUpdateGoal: (goalId: string, text: string) => void
+  onUpdateStreak?: (
+    goalId: string,
+    isStreakGoal: boolean,
+    streakTargetDays?: number,
+    streakStartDate?: number,
+  ) => void
   onToggleGoal: (goalId: string) => void
+  onResetStreak?: (goalId: string) => void
   title?: string
   description?: string
   readOnly?: boolean
@@ -17,7 +24,9 @@ export function Board({
   goals,
   size,
   onUpdateGoal,
+  onUpdateStreak,
   onToggleGoal,
+  onResetStreak,
   title,
   description,
   readOnly = false,
@@ -84,7 +93,18 @@ export function Board({
                 onUpdate={
                   readOnly ? () => {} : (text) => onUpdateGoal(goal.id, text)
                 }
+                onUpdateStreak={
+                  readOnly || !onUpdateStreak
+                    ? undefined
+                    : (isStreak, targetDays, startDate) =>
+                        onUpdateStreak(goal.id, isStreak, targetDays, startDate)
+                }
                 onToggle={readOnly ? () => {} : () => onToggleGoal(goal.id)}
+                onResetStreak={
+                  readOnly || !onResetStreak
+                    ? undefined
+                    : () => onResetStreak(goal.id)
+                }
                 readOnly={readOnly}
               />
             ))}

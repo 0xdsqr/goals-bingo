@@ -9,10 +9,43 @@ export const list = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx)
     if (!userId) return []
-    return await ctx.db
+    const boards = await ctx.db
       .query("boards")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect()
+
+    // Enrich boards with goal completion stats
+    const enrichedBoards = await Promise.all(
+      boards.map(async (board) => {
+        const goals = await ctx.db
+          .query("goals")
+          .withIndex("by_board", (q) => q.eq("boardId", board._id))
+          .collect()
+
+        const totalGoals = goals.length
+        const completedGoals = goals.filter((g) => g.isCompleted).length
+        // Exclude free space from percentage calculation
+        const nonFreeSpaceGoals = goals.filter((g) => !g.isFreeSpace)
+        const nonFreeSpaceCompleted = nonFreeSpaceGoals.filter(
+          (g) => g.isCompleted,
+        ).length
+        const completionPercent =
+          nonFreeSpaceGoals.length > 0
+            ? Math.round(
+                (nonFreeSpaceCompleted / nonFreeSpaceGoals.length) * 100,
+              )
+            : 0
+
+        return {
+          ...board,
+          totalGoals,
+          completedGoals,
+          completionPercent,
+        }
+      }),
+    )
+
+    return enrichedBoards
   },
 })
 
@@ -266,6 +299,7 @@ export const update = mutation({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     difficulty: v.optional(v.string()),
+    difficultySummary: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -277,6 +311,9 @@ export const update = mutation({
       ...(args.name !== undefined && { name: args.name }),
       ...(args.description !== undefined && { description: args.description }),
       ...(args.difficulty !== undefined && { difficulty: args.difficulty }),
+      ...(args.difficultySummary !== undefined && {
+        difficultySummary: args.difficultySummary,
+      }),
       updatedAt: Date.now(),
     })
   },
