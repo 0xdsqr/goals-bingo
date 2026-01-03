@@ -394,7 +394,10 @@ export const getCommunityFeed = query({
         .filter((e) => memberUserIds.has(e.userId) && !e.voidedAt)
         .slice(0, 30)
         .map(async (event) => {
-          const _user = await ctx.db.get(event.userId)
+          const profile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_user", (q) => q.eq("userId", event.userId))
+            .first()
 
           let shareId: string | undefined
           if (event.boardId) {
@@ -419,6 +422,7 @@ export const getCommunityFeed = query({
           return {
             ...event,
             userName,
+            username: profile?.username,
             shareId,
             upCount,
             downCount,

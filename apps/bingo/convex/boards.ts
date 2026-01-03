@@ -274,12 +274,20 @@ export const create = mutation({
 
     const now = Date.now()
     const year = args.year ?? new Date().getFullYear()
+    
+    // Auto-generate shareId so boards are shareable by default
+    const shareId = Array.from(crypto.getRandomValues(new Uint8Array(10)))
+      .map((b) => b.toString(36))
+      .join("")
+      .slice(0, 12)
+    
     const boardId = await ctx.db.insert("boards", {
       userId,
       name: args.name,
       description: args.description,
       size: args.size,
       year,
+      shareId,
       createdAt: now,
       updatedAt: now,
     })
@@ -520,6 +528,7 @@ export const getEventFeed = query({
         return {
           ...event,
           userName,
+          username: profile?.username, // For linking to profile
           avatarUrl,
           shareId,
           upCount,

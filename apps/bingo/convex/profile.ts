@@ -125,6 +125,77 @@ export const getProfile = query({
   },
 })
 
+// Get user profile by username with their public boards
+export const getProfileByUsername = query({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_username", (q) => q.eq("username", args.username.toLowerCase()))
+      .first()
+
+    if (!profile) return null
+
+    const user = await ctx.db.get(profile.userId)
+    if (!user) return null
+
+    let avatarUrl: string | null = null
+    if (profile.avatarId) {
+      avatarUrl = await ctx.storage.getUrl(profile.avatarId)
+    }
+
+    // Get user's public boards (boards with shareId)
+    const allBoards = await ctx.db
+      .query("boards")
+      .withIndex("by_user", (q) => q.eq("userId", profile.userId))
+      .collect()
+
+    // Only show boards that have a shareId (public)
+    const publicBoards = allBoards.filter((b) => b.shareId)
+
+    // Enrich boards with completion stats
+    const enrichedBoards = await Promise.all(
+      publicBoards.map(async (board) => {
+        const goals = await ctx.db
+          .query("goals")
+          .withIndex("by_board", (q) => q.eq("boardId", board._id))
+          .collect()
+
+        const nonFreeSpaceGoals = goals.filter((g) => !g.isFreeSpace)
+        const completedGoals = nonFreeSpaceGoals.filter((g) => g.isCompleted).length
+        const totalGoals = nonFreeSpaceGoals.length
+        const completionPercent =
+          totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0
+
+        return {
+          _id: board._id,
+          name: board.name,
+          year: board.year,
+          shareId: board.shareId,
+          completedGoals,
+          totalGoals,
+          completionPercent,
+          createdAt: board.createdAt,
+        }
+      })
+    )
+
+    // Sort by year desc, then createdAt desc
+    enrichedBoards.sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year
+      return b.createdAt - a.createdAt
+    })
+
+    return {
+      userId: profile.userId,
+      username: profile.username,
+      avatarUrl,
+      bio: profile.bio,
+      boards: enrichedBoards,
+    }
+  },
+})
+
 // Update username
 export const updateUsername = mutation({
   args: { username: v.string() },

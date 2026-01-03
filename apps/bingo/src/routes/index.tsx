@@ -46,6 +46,7 @@ type EventFeedItem = {
   metadata?: string
   createdAt: number
   userName?: string
+  username?: string // For linking to profile
   avatarUrl?: string | null
   shareId?: string
   upCount: number
@@ -1315,7 +1316,18 @@ function EventFeedItemComponent({ event }: { event: EventFeedItem }) {
         )}
         <div className="flex-1 min-w-0">
           <p className="text-sm leading-relaxed">
-            <span className="font-semibold">{event.userName || "Someone"}</span>{" "}
+            {event.username ? (
+              <Link
+                to="/user/$username"
+                params={{ username: event.username }}
+                className="font-semibold hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {event.userName || "Someone"}
+              </Link>
+            ) : (
+              <span className="font-semibold">{event.userName || "Someone"}</span>
+            )}{" "}
             <span className="text-muted-foreground">{getEventMessage()}</span>
           </p>
           <span className="text-xs text-muted-foreground">

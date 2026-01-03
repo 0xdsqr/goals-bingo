@@ -217,6 +217,7 @@ export const getWatchedFeed = query({
         return {
           ...event,
           userName,
+          username: profile?.username,
           avatarUrl,
           shareId,
           upCount,
